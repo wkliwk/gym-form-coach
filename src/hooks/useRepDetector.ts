@@ -6,6 +6,16 @@ import {
   processSquatFrame,
   type SquatState,
 } from "../lib/formAnalysis/squat";
+import {
+  createDeadliftState,
+  processDeadliftFrame,
+  type DeadliftState,
+} from "../lib/formAnalysis/deadlift";
+import {
+  createPushupState,
+  processPushupFrame,
+  type PushupState,
+} from "../lib/formAnalysis/pushup";
 
 export interface RepEvent {
   repNumber: number;
@@ -14,11 +24,15 @@ export interface RepEvent {
 
 interface RepDetectorState {
   squat: SquatState;
+  deadlift: DeadliftState;
+  pushup: PushupState;
 }
 
 export function useRepDetector(exercise: Exercise) {
   const stateRef = useRef<RepDetectorState>({
     squat: createSquatState(),
+    deadlift: createDeadliftState(),
+    pushup: createPushupState(),
   });
 
   const totalReps = useRef(0);
@@ -26,13 +40,28 @@ export function useRepDetector(exercise: Exercise) {
 
   const processPose = useCallback(
     (pose: Pose): RepEvent | null => {
-      if (exercise !== "squat") {
-        // Deadlift and push-up modules will be added in issue #5
-        return null;
-      }
+      let result: { completedRep: boolean; flag: FormFlag | null };
 
-      const result = processSquatFrame(pose, stateRef.current.squat);
-      stateRef.current.squat = result.state;
+      switch (exercise) {
+        case "squat": {
+          const r = processSquatFrame(pose, stateRef.current.squat);
+          stateRef.current.squat = r.state;
+          result = r;
+          break;
+        }
+        case "deadlift": {
+          const r = processDeadliftFrame(pose, stateRef.current.deadlift);
+          stateRef.current.deadlift = r.state;
+          result = r;
+          break;
+        }
+        case "pushup": {
+          const r = processPushupFrame(pose, stateRef.current.pushup);
+          stateRef.current.pushup = r.state;
+          result = r;
+          break;
+        }
+      }
 
       if (result.completedRep) {
         totalReps.current += 1;
@@ -58,7 +87,11 @@ export function useRepDetector(exercise: Exercise) {
   }, []);
 
   const reset = useCallback(() => {
-    stateRef.current = { squat: createSquatState() };
+    stateRef.current = {
+      squat: createSquatState(),
+      deadlift: createDeadliftState(),
+      pushup: createPushupState(),
+    };
     totalReps.current = 0;
     flagCounts.current = {};
   }, []);
