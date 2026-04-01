@@ -6,33 +6,20 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from "react-native";
-import type {
-  SessionRecord,
-  Exercise,
-  FormFlag,
-} from "../lib/types";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { SessionRecord } from "../lib/types";
 import {
   FLAG_LABELS,
   DRILL_SUGGESTIONS,
   EXERCISE_LABELS,
 } from "../lib/types";
 import { addSession, loadSessions, findPreviousSession } from "../lib/sessionStorage";
+import type { TrainStackParamList } from "../navigation";
 
-interface SummaryScreenProps {
-  exercise: Exercise;
-  reps: number;
-  topFlag: FormFlag | null;
-  score: number;
-  onDone: () => void;
-}
+type SummaryProps = NativeStackScreenProps<TrainStackParamList, "Summary">;
 
-export default function SummaryScreen({
-  exercise,
-  reps,
-  topFlag,
-  score,
-  onDone,
-}: SummaryScreenProps) {
+export default function SummaryScreen({ route, navigation }: SummaryProps) {
+  const { exercise, reps, topFlag, score } = route.params;
   const [delta, setDelta] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -58,6 +45,11 @@ export default function SummaryScreen({
 
   const flagLabel = topFlag ? FLAG_LABELS[topFlag] : null;
   const drill = topFlag ? DRILL_SUGGESTIONS[topFlag] : null;
+
+  const handleDone = () => {
+    // Pop all the way back to Home
+    navigation.popToTop();
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -121,7 +113,7 @@ export default function SummaryScreen({
         )}
       </View>
 
-      <TouchableOpacity style={styles.doneButton} onPress={onDone}>
+      <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
         <Text style={styles.doneButtonText}>Done</Text>
       </TouchableOpacity>
     </SafeAreaView>
