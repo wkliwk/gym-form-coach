@@ -31,6 +31,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "gym-form-coach",
+          "organization": "wkliwk"
+        }
+      ]
+    ]
   }
 }
