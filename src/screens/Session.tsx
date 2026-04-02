@@ -21,7 +21,7 @@ import {
   Platform,
   SafeAreaView,
 } from "react-native";
-import { CameraView } from "expo-camera";
+import { Camera } from "react-native-vision-camera";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCamera } from "../hooks/useCamera";
 import { usePoseEstimation } from "../hooks/usePoseEstimation";
@@ -46,7 +46,8 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
   // Camera guide shown before first rep
   const [showGuide, setShowGuide] = useState(true);
 
-  const { cameraRef, permissionState, requestPermission, openSettings } =
+  const cameraRef = useRef<InstanceType<typeof Camera> | null>(null);
+  const { device, permissionState, requestPermission, openSettings } =
     useCamera();
 
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -171,13 +172,24 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
   }
 
   // ── Camera granted + guide dismissed ─────────────────────────────────────
+  if (!device) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#00E5FF" />
+        <Text style={styles.modelLoadingText}>Finding camera…</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <CameraView
+      <Camera
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
-        facing="back"
-        onCameraReady={handleCameraReady}
+        device={device}
+        isActive={!showGuide}
+        photo={true}
+        onInitialized={handleCameraReady}
         onLayout={(e) => {
           const { width, height } = e.nativeEvent.layout;
           setOverlaySize({ width, height });

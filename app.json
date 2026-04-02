@@ -40,6 +40,12 @@
           "project": "gym-form-coach",
           "organization": "wkliwk"
         }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Gym Form Coach uses your camera to analyze exercise form in real time. All processing happens on your device."
+        }
       ]
     ]
   }
