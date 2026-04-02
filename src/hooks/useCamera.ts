@@ -1,66 +1,67 @@
 /**
  * useCamera.ts
  *
- * Manages camera permissions and provides a ref to CameraView.
- * Exposes a request function so components can prompt at the right time.
+ * Manages camera permissions using react-native-vision-camera.
+ * Provides device selection and permission state for Session screen.
  */
 
-import { useRef, useEffect, useCallback } from 'react';
-import { Linking } from 'react-native';
+import { useEffect, useCallback, useState } from "react";
+import { Linking } from "react-native";
 import {
-  CameraView,
-  useCameraPermissions,
-  type PermissionStatus,
-} from 'expo-camera';
+  Camera,
+  useCameraDevice,
+  useCameraPermission,
+  type CameraDevice,
+} from "react-native-vision-camera";
 
 export type CameraPermissionState =
-  | 'undetermined'
-  | 'granted'
-  | 'denied'
-  | 'loading';
+  | "undetermined"
+  | "granted"
+  | "denied"
+  | "loading";
 
 export interface UseCameraReturn {
-  cameraRef: React.RefObject<CameraView | null>;
+  device: CameraDevice | undefined;
   permissionState: CameraPermissionState;
   requestPermission: () => Promise<void>;
   openSettings: () => void;
 }
 
-function mapStatus(status: PermissionStatus | null): CameraPermissionState {
-  if (status === null) return 'loading';
-  switch (status) {
-    case 'granted':
-      return 'granted';
-    case 'denied':
-      return 'denied';
-    default:
-      return 'undetermined';
-  }
-}
-
 export function useCamera(): UseCameraReturn {
-  const cameraRef = useRef<CameraView | null>(null);
-  const [permission, requestPermissionAsync] = useCameraPermissions();
+  const { hasPermission, requestPermission: requestCameraPermission } =
+    useCameraPermission();
+  const device = useCameraDevice("back");
+  const [hasRequested, setHasRequested] = useState(false);
 
-  // Auto-request on first mount if undetermined
+  // Auto-request on mount
   useEffect(() => {
-    if (permission !== null && permission.status === 'undetermined') {
-      void requestPermissionAsync();
+    if (!hasPermission && !hasRequested) {
+      setHasRequested(true);
+      void requestCameraPermission();
     }
-  }, [permission, requestPermissionAsync]);
+  }, [hasPermission, hasRequested, requestCameraPermission]);
 
   const requestPermission = useCallback(async () => {
-    await requestPermissionAsync();
-  }, [requestPermissionAsync]);
+    await requestCameraPermission();
+  }, [requestCameraPermission]);
 
   const openSettings = useCallback(() => {
     void Linking.openSettings();
   }, []);
 
-  const permissionState = mapStatus(permission?.status ?? null);
+  let permissionState: CameraPermissionState;
+  if (!hasRequested && !hasPermission) {
+    permissionState = "undetermined";
+  } else if (hasPermission) {
+    permissionState = "granted";
+  } else if (hasRequested && !hasPermission) {
+    permissionState = "denied";
+  } else {
+    permissionState = "loading";
+  }
 
   return {
-    cameraRef,
+    device,
     permissionState,
     requestPermission,
     openSettings,
