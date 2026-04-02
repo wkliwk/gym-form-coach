@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 
 export default function SafetyBanner() {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} pointerEvents="none">
       <Text style={styles.text}>
         Movement guide — stop if you feel pain
       </Text>
@@ -14,17 +14,16 @@ export default function SafetyBanner() {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 40,
-    left: 20,
-    right: 20,
-    backgroundColor: "#00000080",
+    bottom: Platform.OS === "ios" ? 130 : 110,
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
   },
   text: {
     fontSize: 12,
-    color: "#ffffff99",
+    color: "rgba(255,255,255,0.75)",
     textAlign: "center",
   },
 });

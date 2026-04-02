@@ -1,19 +1,16 @@
 /**
  * Session.tsx
  *
- * Main camera screen: full-screen camera view + pose overlay + dev FPS counter.
+ * Main camera screen with integrated form analysis + audio cues.
  * Receives exerciseType from navigation params.
  *
- * Layout:
- *   - Exercise name header
- *   - CameraView (full screen, back camera)
- *   - PoseOverlay (absolute, fills camera view)
- *   - FPS counter (dev only, top-right corner)
- *   - End Session button (bottom)
- *   - Camera permission denied screen (inline)
+ * Flow:
+ *   1. CameraGuide overlay (user dismisses with "I'm Ready")
+ *   2. Camera + pose overlay + rep detection + audio cues
+ *   3. End Session → Summary with accumulated stats
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -28,8 +25,13 @@ import { CameraView } from "expo-camera";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCamera } from "../hooks/useCamera";
 import { usePoseEstimation } from "../hooks/usePoseEstimation";
+import { useRepDetector } from "../hooks/useRepDetector";
 import PoseOverlay from "../components/PoseOverlay";
+import CueBanner from "../components/CueBanner";
+import SafetyBanner from "../components/SafetyBanner";
+import CameraGuide from "../components/CameraGuide";
 import { EXERCISE_LABELS } from "../lib/types";
+import type { FormFlag } from "../lib/types";
 import type { TrainStackParamList } from "../navigation";
 
 type SessionProps = NativeStackScreenProps<TrainStackParamList, "Session">;
@@ -37,31 +39,68 @@ type SessionProps = NativeStackScreenProps<TrainStackParamList, "Session">;
 export default function Session({ route, navigation }: SessionProps): React.ReactElement {
   const { exerciseType } = route.params;
 
+  // Camera guide shown before first rep
+  const [showGuide, setShowGuide] = useState(true);
+
   const { cameraRef, permissionState, requestPermission, openSettings } =
     useCamera();
 
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 });
 
+  // Rep detection + form analysis
+  const { processPose, getStats, reset } = useRepDetector(exerciseType);
+  const [repCount, setRepCount] = useState(0);
+  const [lastCueFlag, setLastCueFlag] = useState<FormFlag | null>(null);
+  const [lastCueRep, setLastCueRep] = useState(0);
+
+  // Reset detector when exercise changes
+  useEffect(() => {
+    reset();
+    setRepCount(0);
+    setLastCueFlag(null);
+    setLastCueRep(0);
+  }, [exerciseType, reset]);
+
   const handleCameraReady = useCallback(() => {
     setIsCameraReady(true);
   }, []);
 
+  // Only enable pose estimation after guide is dismissed
   const { poses, modelReady, fps } = usePoseEstimation({
     cameraRef,
     isCameraReady,
-    enabled: permissionState === "granted",
+    enabled: permissionState === "granted" && !showGuide,
   });
 
+  // Process each pose frame through the form analyser
+  const prevPosesRef = useRef(poses);
+  useEffect(() => {
+    if (poses === prevPosesRef.current || poses.length === 0 || showGuide) return;
+    prevPosesRef.current = poses;
+
+    const pose = poses[0];
+    const event = processPose(pose);
+    if (event) {
+      setRepCount(event.repNumber);
+      setLastCueFlag(event.flag);
+      setLastCueRep(event.repNumber);
+    }
+  }, [poses, processPose, showGuide]);
+
   const handleEndSession = useCallback(() => {
-    // TODO: Wire real rep/flag data from form analysis in #13
+    const stats = getStats();
     navigation.navigate("Summary", {
       exercise: exerciseType,
-      reps: 0,
-      topFlag: null,
-      score: 100,
+      reps: stats.totalReps,
+      topFlag: stats.topFlag,
+      score: stats.score,
     });
-  }, [navigation, exerciseType]);
+  }, [navigation, exerciseType, getStats]);
+
+  const handleGuideReady = useCallback(() => {
+    setShowGuide(false);
+  }, []);
 
   // ── Permission: loading ──────────────────────────────────────────────────
   if (permissionState === "loading") {
@@ -120,7 +159,12 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
     );
   }
 
-  // ── Camera granted ───────────────────────────────────────────────────────
+  // ── Camera Guide (shown before session starts) ───────────────────────────
+  if (showGuide) {
+    return <CameraGuide exercise={exerciseType} onReady={handleGuideReady} />;
+  }
+
+  // ── Camera granted + guide dismissed ─────────────────────────────────────
   return (
     <View style={styles.container}>
       <CameraView
@@ -143,10 +187,14 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
         />
       )}
 
-      {/* Exercise name header */}
+      {/* Exercise name + rep counter header */}
       <View style={styles.exerciseHeader} pointerEvents="none">
         <Text style={styles.exerciseName}>{EXERCISE_LABELS[exerciseType]}</Text>
+        <Text style={styles.repCounter}>{repCount} reps</Text>
       </View>
+
+      {/* Audio + visual cue banner */}
+      <CueBanner flag={lastCueFlag} repNumber={lastCueRep} />
 
       {/* Model loading indicator */}
       {!modelReady && (
@@ -164,11 +212,7 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
       )}
 
       {/* Safety banner — always visible during session */}
-      <View style={styles.safetyBanner} pointerEvents="none">
-        <Text style={styles.safetyText}>
-          Movement guide — stop if you feel pain
-        </Text>
-      </View>
+      <SafetyBanner />
 
       {/* End Session button */}
       <View style={styles.endSessionContainer}>
@@ -207,11 +251,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    alignItems: "center",
   },
   exerciseName: {
     color: "#00E5FF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  repCounter: {
+    color: "#ffffff",
+    fontSize: 24,
+    fontWeight: "800",
+    marginTop: 2,
+    fontVariant: ["tabular-nums"],
   },
   // Permission screens
   permissionTitle: {
@@ -245,7 +297,7 @@ const styles = StyleSheet.create({
   // Overlays
   modelLoadingBadge: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 100 : 64,
+    top: Platform.OS === "ios" ? 120 : 84,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
@@ -274,23 +326,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontVariant: ["tabular-nums"],
   },
-  safetyBanner: {
-    position: "absolute",
-    bottom: Platform.OS === "ios" ? 120 : 100,
-    alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  safetyText: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 12,
-  },
   // End Session
   endSessionContainer: {
     position: "absolute",
-    bottom: Platform.OS === "ios" ? 50 : 30,
+    bottom: Platform.OS === "ios" ? 80 : 60,
     left: 20,
     right: 20,
   },
