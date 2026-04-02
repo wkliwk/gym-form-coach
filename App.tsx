@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { TrainStackParamList, TabParamList } from "./src/navigation";
 import HomeScreen from "./src/screens/Home";
 import Session from "./src/screens/Session";
 import SummaryScreen from "./src/screens/Summary";
 import HistoryScreen from "./src/screens/History";
+import OnboardingScreen, { ONBOARDING_KEY } from "./src/screens/Onboarding";
 
 const DarkTheme = {
   ...DefaultTheme,
@@ -51,7 +53,7 @@ function HistoryIcon({ color }: { color: string }) {
   return <Text style={{ fontSize: 20, color }}>📊</Text>;
 }
 
-export default function App() {
+function MainApp() {
   return (
     <NavigationContainer theme={DarkTheme}>
       <Tab.Navigator
@@ -83,4 +85,41 @@ export default function App() {
       <StatusBar style="light" />
     </NavigationContainer>
   );
+}
+
+type AppState = "loading" | "onboarding" | "main";
+
+export default function App() {
+  const [appState, setAppState] = useState<AppState>("loading");
+
+  useEffect(() => {
+    async function checkOnboarding() {
+      try {
+        const value = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (value === "true") {
+          setAppState("main");
+        } else {
+          setAppState("onboarding");
+        }
+      } catch {
+        // If storage read fails, skip onboarding to avoid blocking the user
+        setAppState("main");
+      }
+    }
+    checkOnboarding();
+  }, []);
+
+  if (appState === "loading") {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0a0a0f" }} />
+    );
+  }
+
+  if (appState === "onboarding") {
+    return (
+      <OnboardingScreen onComplete={() => setAppState("main")} />
+    );
+  }
+
+  return <MainApp />;
 }
