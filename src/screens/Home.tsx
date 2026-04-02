@@ -10,6 +10,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { Exercise } from "../lib/types";
 import { EXERCISE_LABELS } from "../lib/types";
 import type { TrainStackParamList } from "../navigation";
+import { trackExerciseSelected } from "../lib/analytics";
 
 type HomeProps = {
   navigation: NativeStackNavigationProp<TrainStackParamList, "Home">;
@@ -35,7 +36,10 @@ export default function HomeScreen({ navigation }: HomeProps) {
             key={type}
             style={styles.card}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate("Session", { exerciseType: type })}
+            onPress={() => {
+              trackExerciseSelected(type);
+              navigation.navigate("Session", { exerciseType: type });
+            }}
             accessibilityRole="button"
             accessibilityLabel={`Start ${EXERCISE_LABELS[type]} session`}
           >

@@ -33,6 +33,10 @@ import CameraGuide from "../components/CameraGuide";
 import { EXERCISE_LABELS } from "../lib/types";
 import type { FormFlag } from "../lib/types";
 import type { TrainStackParamList } from "../navigation";
+import {
+  trackSessionStart,
+  trackSessionEnd,
+} from "../lib/analytics";
 
 type SessionProps = NativeStackScreenProps<TrainStackParamList, "Session">;
 
@@ -90,6 +94,7 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
 
   const handleEndSession = useCallback(() => {
     const stats = getStats();
+    trackSessionEnd(exerciseType, stats.totalReps, stats.score);
     navigation.navigate("Summary", {
       exercise: exerciseType,
       reps: stats.totalReps,
@@ -100,7 +105,8 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
 
   const handleGuideReady = useCallback(() => {
     setShowGuide(false);
-  }, []);
+    trackSessionStart(exerciseType);
+  }, [exerciseType]);
 
   // ── Permission: loading ──────────────────────────────────────────────────
   if (permissionState === "loading") {
