@@ -1,8 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { View, Text, StyleSheet, Animated, Platform, Dimensions } from "react-native";
 import * as Speech from "expo-speech";
 import type { FormFlag } from "../lib/types";
 import { FLAG_LABELS } from "../lib/types";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+// Position below exercise header (safe area + header + rep counter + gap)
+// Scales proportionally: ~18% from top on standard iPhones, clamps for small screens
+const CUE_TOP = Math.max(140, Math.round(SCREEN_HEIGHT * 0.18));
 
 interface CueBannerProps {
   flag: FormFlag | null;
@@ -54,7 +59,7 @@ export default function CueBanner({ flag, repNumber }: CueBannerProps) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    top: 100,
+    top: CUE_TOP,
     left: 20,
     right: 20,
     alignItems: "center",
