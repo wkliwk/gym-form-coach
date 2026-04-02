@@ -16,6 +16,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.wkliwk.gymformcoach",
       "deploymentTarget": "14.0",
+      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Gym Form Coach uses your camera to analyze exercise form in real time. All processing happens on your device — no video is uploaded."
       }
