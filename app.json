@@ -18,16 +18,20 @@
       "deploymentTarget": "14.0",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Gym Form Coach uses your camera to analyze exercise form in real time. All processing happens on your device — no video is uploaded."
+        "NSCameraUsageDescription": "Gym Form Coach uses your camera to analyze exercise form in real time. All processing happens on your device."
       }
     },
     "android": {
+      "package": "com.wkliwk.gymformcoach",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -47,6 +51,12 @@
           "cameraPermissionText": "Gym Form Coach uses your camera to analyze exercise form in real time. All processing happens on your device."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b85b8c36-fb16-4706-a01e-4c3ad1da28b3"
+      }
+    },
+    "owner": "wkliwk"
   }
 }
