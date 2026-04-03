@@ -5,31 +5,12 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Sentry from "@sentry/react-native";
 import type { TrainStackParamList, TabParamList } from "./src/navigation";
 import HomeScreen from "./src/screens/Home";
 import Session from "./src/screens/Session";
 import SummaryScreen from "./src/screens/Summary";
 import HistoryScreen from "./src/screens/History";
 import OnboardingScreen, { ONBOARDING_KEY } from "./src/screens/Onboarding";
-
-// Initialise Sentry crash reporting.
-// DSN is sourced from the EXPO_PUBLIC_SENTRY_DSN environment variable — never
-// hardcoded here. In dev builds the variable is typically unset so Sentry runs
-// as a no-op. Sentry also silently skips init when DSN is an empty string.
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
-  // Only enable in non-dev builds where a real DSN is present
-  enabled: !__DEV__ && Boolean(process.env.EXPO_PUBLIC_SENTRY_DSN),
-  tracesSampleRate: 0.2,
-  // Never attach screenshots — avoids any possibility of capturing camera frames
-  attachScreenshot: false,
-  // Strip user identity fields before sending to enforce anonymous-only reporting
-  beforeSend(event) {
-    delete event.user;
-    return event;
-  },
-});
 
 const DarkTheme = {
   ...DefaultTheme,
@@ -108,7 +89,7 @@ function MainApp() {
 
 type AppState = "loading" | "onboarding" | "main";
 
-function AppRoot() {
+export default function App() {
   const [appState, setAppState] = useState<AppState>("loading");
 
   useEffect(() => {
@@ -121,7 +102,6 @@ function AppRoot() {
           setAppState("onboarding");
         }
       } catch {
-        // If storage read fails, skip onboarding to avoid blocking the user
         setAppState("main");
       }
     }
@@ -133,14 +113,8 @@ function AppRoot() {
   }
 
   if (appState === "onboarding") {
-    return (
-      <OnboardingScreen onComplete={() => setAppState("main")} />
-    );
+    return <OnboardingScreen onComplete={() => setAppState("main")} />;
   }
 
   return <MainApp />;
 }
-
-// Wrap with Sentry's error boundary so unhandled React render errors are
-// captured and reported. Sentry.wrap is a no-op when Sentry is disabled.
-export default Sentry.wrap(AppRoot);
