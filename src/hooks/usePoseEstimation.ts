@@ -1,33 +1,28 @@
 /**
  * usePoseEstimation.ts
  *
- * Manages TF.js initialization and drives the pose estimation loop
- * using react-native-vision-camera frame callbacks.
+ * Manages TF.js initialization and drives the pose estimation loop.
  *
- * Strategy: VisionCamera provides frames at native rate. We process
- * frames on the JS thread using a throttled callback — inference runs
- * when the previous frame is done, skipping intermediate frames.
- * This eliminates the takePictureAsync → base64 → JPEG decode bottleneck,
- * achieving 15-20+ fps vs the previous ~5fps.
- *
- * The hook is safe to call whether or not the camera is ready — it gates
- * on modelReady before starting inference.
+ * Loop strategy: interval-based snapshot capture with skip-if-busy.
+ * expo-camera CameraView.takePictureAsync is async — we capture at 100ms
+ * intervals but skip if the previous frame is still processing.
+ * This achieves ~5-8fps depending on device.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import type { Pose } from "@tensorflow-models/pose-detection";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { CameraView } from 'expo-camera';
+import type { Pose } from '@tensorflow-models/pose-detection';
 import {
   initPoseDetector,
   estimatePosesFromBase64,
   disposePoseDetector,
-} from "../lib/poseEstimation";
+} from '../lib/poseEstimation';
 
-const SNAPSHOT_QUALITY = 0.3; // Lower quality for faster decode
+const CAPTURE_INTERVAL_MS = 100; // 10fps target, actual ~5-8fps after inference
+const SNAPSHOT_QUALITY = 0.3;
 
 export interface UsePoseEstimationOptions {
-  /** Camera ref — supports VisionCamera or expo-camera refs */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cameraRef: React.RefObject<any>;
+  cameraRef: React.RefObject<CameraView | null>;
   isCameraReady: boolean;
   enabled?: boolean;
 }
@@ -37,16 +32,6 @@ export interface UsePoseEstimationReturn {
   modelReady: boolean;
   fps: number;
 }
-
-/**
- * Throttled interval approach optimized for VisionCamera.
- * VisionCamera frame processors run on worklet threads where TF.js can't execute,
- * so we use a faster interval-based capture with reduced overhead:
- * - 100ms interval (target ~10fps capture rate, actual inference ~15fps)
- * - Skips capture if previous inference is still running
- * - Uses takePicture (not takePictureAsync) for faster capture on VisionCamera
- */
-const CAPTURE_INTERVAL_MS = 100; // 10fps target capture rate
 
 export function usePoseEstimation({
   cameraRef,
@@ -72,7 +57,7 @@ export function usePoseEstimation({
         await initPoseDetector();
         if (!cancelled) setModelReady(true);
       } catch (err) {
-        if (__DEV__) console.error("[usePoseEstimation] init failed:", err);
+        if (__DEV__) console.error('[usePoseEstimation] init failed:', err);
       }
     })();
 
@@ -98,7 +83,7 @@ export function usePoseEstimation({
     }
   }, []);
 
-  // Pose estimation loop — optimized interval with skip-if-busy
+  // Pose estimation loop — skip-if-busy for max throughput
   useEffect(() => {
     if (!modelReady || !isCameraReady || !enabled) {
       if (intervalRef.current !== null) {
@@ -109,54 +94,30 @@ export function usePoseEstimation({
     }
 
     intervalRef.current = setInterval(() => {
-      // Skip if still processing previous frame
-      if (isProcessing.current) return;
+      if (isProcessing.current) return; // skip — still processing previous frame
 
       const camera = cameraRef.current;
-      if (!camera) return;
+      if (camera === null) return;
 
       isProcessing.current = true;
 
       void (async () => {
         try {
-          // VisionCamera's Camera ref supports takePhoto/takeSnapshot
-          // We use the ref's snapshot method for fast capture
-          const cam = camera as Record<string, unknown>;
-          let base64: string | undefined;
+          const picture = await camera.takePictureAsync({
+            quality: SNAPSHOT_QUALITY,
+            base64: true,
+            skipProcessing: true,
+            shutterSound: false,
+          } as Parameters<CameraView['takePictureAsync']>[0]);
 
-          if (typeof cam.takeSnapshot === "function") {
-            // VisionCamera takeSnapshot — faster than takePhoto, no shutter
-            const result = await (cam.takeSnapshot as (opts: Record<string, unknown>) => Promise<{ path: string }>)({
-              quality: 30,
-            });
-            // Read the file as base64 if needed — but VisionCamera snapshots
-            // don't include base64 directly, so we fall through to takePicture
-            if (result?.path) {
-              // For now, use the RNFS-free approach: re-capture with base64
-              // VisionCamera doesn't support base64 directly in takeSnapshot
-              // Fall through to expo-camera compatible path
-            }
-          }
-
-          if (!base64 && typeof cam.takePictureAsync === "function") {
-            // Expo-camera compatible path (fallback)
-            const picture = await (cam.takePictureAsync as (opts: Record<string, unknown>) => Promise<{ base64?: string }>)({
-              quality: SNAPSHOT_QUALITY,
-              base64: true,
-              skipProcessing: true,
-              shutterSound: false,
-            });
-            base64 = picture?.base64;
-          }
-
-          if (base64) {
-            const detected = await estimatePosesFromBase64(base64);
+          if (picture?.base64) {
+            const detected = await estimatePosesFromBase64(picture.base64);
             setPoses(detected);
             recordFrame();
           }
         } catch (err) {
           if (__DEV__) {
-            console.warn("[usePoseEstimation] capture error:", err);
+            console.warn('[usePoseEstimation] capture error:', err);
           }
         } finally {
           isProcessing.current = false;
