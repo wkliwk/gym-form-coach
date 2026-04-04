@@ -17,6 +17,7 @@ export type FormFlag =
 export interface RepRecord {
   repNumber: number;
   flag: FormFlag | null;
+  score: number;
 }
 
 export interface SetRecord {

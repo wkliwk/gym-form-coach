@@ -92,7 +92,7 @@ function detectFlags(pose: Pose): FormFlag[] {
 export function processSquatFrame(
   pose: Pose,
   state: SquatState
-): { completedRep: boolean; flag: FormFlag | null; state: SquatState } {
+): { completedRep: boolean; flag: FormFlag | null; allFlags: FormFlag[]; state: SquatState } {
   const lHip = getKeypoint(pose, LEFT_HIP);
   const rHip = getKeypoint(pose, RIGHT_HIP);
   const lKnee = getKeypoint(pose, LEFT_KNEE);
@@ -100,7 +100,7 @@ export function processSquatFrame(
 
   // Need at least one side of hip + knee visible
   if ((!lHip && !rHip) || (!lKnee && !rKnee)) {
-    return { completedRep: false, flag: null, state };
+    return { completedRep: false, flag: null, allFlags: [], state };
   }
 
   const hipY = lHip && rHip ? midpointY(lHip, rHip) : (lHip ?? rHip)!.y;
@@ -180,15 +180,16 @@ export function processSquatFrame(
         }
 
         // Pick the most important flag (first detected = most persistent)
-        const flag = newState.currentRepFlags[0] ?? null;
+        const allFlags = [...newState.currentRepFlags];
+        const flag = allFlags[0] ?? null;
         newState.currentRepFlags = [];
         newState.lowestHipY = 0;
 
-        return { completedRep: true, flag, state: newState };
+        return { completedRep: true, flag, allFlags, state: newState };
       }
       break;
     }
   }
 
-  return { completedRep: false, flag: null, state: newState };
+  return { completedRep: false, flag: null, allFlags: [], state: newState };
 }

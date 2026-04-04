@@ -157,6 +157,8 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
               const isBest = rep.repNumber === bestRep;
               const isWorst = rep.repNumber === worstRep;
               const hasFlag = rep.flag !== null;
+              const scoreColor =
+                rep.score >= 80 ? "#22c55e" : rep.score >= 60 ? "#f59e0b" : "#ef4444";
               const barColor = hasFlag ? "#f59e0b" : "#22c55e";
 
               return (
@@ -171,6 +173,9 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
                   <View style={styles.repNumberContainer}>
                     <Text style={styles.repNumber}>{rep.repNumber}</Text>
                   </View>
+                  <Text style={[styles.repScoreText, { color: scoreColor }]}>
+                    {rep.score}
+                  </Text>
                   <View style={styles.repBarContainer}>
                     <View
                       style={[styles.repBar, { backgroundColor: barColor }]}
@@ -317,6 +322,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#ffffff80",
+  },
+  repScoreText: {
+    fontSize: 14,
+    fontWeight: "700",
+    width: 30,
+    textAlign: "right",
+    marginRight: 10,
+    fontVariant: ["tabular-nums" as const],
   },
   repBarContainer: {
     width: 4,
