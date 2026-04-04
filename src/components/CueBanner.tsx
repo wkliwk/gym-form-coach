@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Platform, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Animated, Dimensions, Vibration } from "react-native";
 import * as Speech from "expo-speech";
+import * as Haptics from "expo-haptics";
 import type { FormFlag } from "../lib/types";
 import { FLAG_LABELS } from "../lib/types";
 
@@ -21,9 +22,23 @@ export default function CueBanner({ flag, repNumber }: CueBannerProps) {
   useEffect(() => {
     if (repNumber === 0) return;
 
-    // Speak audio cue (max 1 per rep)
+    // Haptic + audio cue (max 1 per rep)
     if (repNumber !== lastSpokenRep.current) {
       lastSpokenRep.current = repNumber;
+
+      // Haptic — near-instant feedback, works even with headphones
+      try {
+        if (flag) {
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } else {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+      } catch {
+        // Fallback for devices without haptic support
+        Vibration.vibrate(flag ? [0, 50, 30, 50] : [0, 40]);
+      }
+
+      // Audio cue
       const text = flag ? FLAG_LABELS[flag] : "Good rep";
       Speech.speak(text, {
         language: "en-US",
