@@ -8,18 +8,23 @@ import {
   TouchableOpacity,
   Alert,
   Pressable,
+  ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import type { SessionRecord } from "../lib/types";
+import type { Exercise, SessionRecord } from "../lib/types";
 import { EXERCISE_LABELS, FLAG_LABELS } from "../lib/types";
 import {
   loadSessions,
   findPreviousSession,
   deleteSession,
   clearAllSessions,
+  getPersonalBests,
+  getWorkoutStreak,
+  getTotalReps,
+  getScoreTrend,
 } from "../lib/sessionStorage";
 
-const MAX_DISPLAY = 10;
+const MAX_DISPLAY = 50;
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -28,6 +33,14 @@ function formatDate(iso: string): string {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+  });
+}
+
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
   });
 }
 
@@ -60,14 +73,96 @@ function DeltaBadge({
   );
 }
 
+function ScoreTrendArrow({ trend }: { trend: number }) {
+  if (trend === 0) return <Text style={styles.trendNeutral}>—</Text>;
+  if (trend > 0) return <Text style={styles.trendUp}>▲</Text>;
+  return <Text style={styles.trendDown}>▼</Text>;
+}
+
+function StatsHeader({ sessions }: { sessions: SessionRecord[] }) {
+  if (sessions.length === 0) return null;
+
+  const totalReps = getTotalReps(sessions);
+  const streak = getWorkoutStreak(sessions);
+
+  return (
+    <View style={styles.statsHeader}>
+      <View style={styles.statBox}>
+        <Text style={styles.statValue}>{sessions.length}</Text>
+        <Text style={styles.statLabel}>Sessions</Text>
+      </View>
+      <View style={styles.statBox}>
+        <Text style={styles.statValue}>{totalReps}</Text>
+        <Text style={styles.statLabel}>Total Reps</Text>
+      </View>
+      <View style={styles.statBox}>
+        <Text style={styles.statValue}>{streak.current}</Text>
+        <Text style={styles.statLabel}>Day Streak</Text>
+      </View>
+      <View style={styles.statBox}>
+        <Text style={styles.statValue}>{streak.best}</Text>
+        <Text style={styles.statLabel}>Best Streak</Text>
+      </View>
+    </View>
+  );
+}
+
+function PersonalBests({
+  sessions,
+  exerciseFilter,
+  onFilterChange,
+}: {
+  sessions: SessionRecord[];
+  exerciseFilter: Exercise | null;
+  onFilterChange: (exercise: Exercise | null) => void;
+}) {
+  const bests = getPersonalBests(sessions);
+  const exercises = Object.keys(bests) as Exercise[];
+  if (exercises.length === 0) return null;
+
+  return (
+    <View style={styles.bestsSection}>
+      <Text style={styles.bestsTitle}>Personal Bests</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.bestsRow}
+      >
+        {exercises.map((ex) => {
+          const best = bests[ex]!;
+          const isActive = exerciseFilter === ex;
+          return (
+            <Pressable
+              key={ex}
+              style={[styles.bestCard, isActive && styles.bestCardActive]}
+              onPress={() => onFilterChange(isActive ? null : ex)}
+            >
+              <Text style={styles.bestExercise}>
+                {EXERCISE_LABELS[ex] ?? ex}
+              </Text>
+              <Text style={styles.bestScore}>{best.score}%</Text>
+              <Text style={styles.bestDate}>{formatShortDate(best.date)}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
 export default function HistoryScreen() {
-  const [sessions, setSessions] = useState<SessionRecord[]>([]);
+  const [allSessions, setAllSessions] = useState<SessionRecord[]>([]);
+  const [exerciseFilter, setExerciseFilter] = useState<Exercise | null>(null);
 
   const refresh = useCallback(() => {
-    loadSessions().then((s) => setSessions(s.slice(0, MAX_DISPLAY)));
+    loadSessions().then((s) => setAllSessions(s.slice(0, MAX_DISPLAY)));
   }, []);
 
   useFocusEffect(refresh);
+
+  const filteredSessions = exerciseFilter
+    ? allSessions.filter((s) => s.exercise === exerciseFilter)
+    : allSessions;
 
   const handleDeleteSession = useCallback(
     (id: string) => {
@@ -104,40 +199,67 @@ export default function HistoryScreen() {
     );
   }, [refresh]);
 
-  const renderItem = ({ item }: { item: SessionRecord }) => (
-    <View style={styles.sessionCard}>
-      <View style={styles.sessionHeader}>
-        <Text style={styles.exerciseLabel}>
-          {EXERCISE_LABELS[item.exercise] ?? item.exercise}
-        </Text>
-        <View style={styles.sessionHeaderRight}>
-          <Text style={styles.dateLabel}>{formatDate(item.date)}</Text>
-          <Pressable
-            onPress={() => handleDeleteSession(item.id)}
-            style={({ pressed }) => [
-              styles.deleteButton,
-              pressed && styles.deleteButtonPressed,
-            ]}
-            accessibilityLabel="Delete session"
-            accessibilityRole="button"
-          >
-            <Text style={styles.deleteButtonText}>✕</Text>
+  const renderItem = ({ item }: { item: SessionRecord }) => {
+    const trend = getScoreTrend(allSessions, item);
+    return (
+      <View style={styles.sessionCard}>
+        <View style={styles.sessionHeader}>
+          <Text style={styles.exerciseLabel}>
+            {EXERCISE_LABELS[item.exercise] ?? item.exercise}
+          </Text>
+          <View style={styles.sessionHeaderRight}>
+            <Text style={styles.dateLabel}>{formatDate(item.date)}</Text>
+            <Pressable
+              onPress={() => handleDeleteSession(item.id)}
+              style={({ pressed }) => [
+                styles.deleteButton,
+                pressed && styles.deleteButtonPressed,
+              ]}
+              accessibilityLabel="Delete session"
+              accessibilityRole="button"
+            >
+              <Text style={styles.deleteButtonText}>✕</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.sessionStats}>
+          <Text style={styles.repCount}>{item.reps} reps</Text>
+          <View style={styles.scoreRow}>
+            <Text style={styles.scoreText}>{item.score}%</Text>
+            <ScoreTrendArrow trend={trend} />
+          </View>
+          <DeltaBadge sessions={allSessions} session={item} />
+        </View>
+
+        {item.topFlag && (
+          <Text style={styles.flagLabel}>
+            {FLAG_LABELS[item.topFlag] ?? item.topFlag}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  const ListHeader = () => (
+    <>
+      <StatsHeader sessions={allSessions} />
+      <PersonalBests
+        sessions={allSessions}
+        exerciseFilter={exerciseFilter}
+        onFilterChange={setExerciseFilter}
+      />
+      {exerciseFilter && (
+        <View style={styles.filterBanner}>
+          <Text style={styles.filterText}>
+            Showing: {EXERCISE_LABELS[exerciseFilter]}
+          </Text>
+          <Pressable onPress={() => setExerciseFilter(null)}>
+            <Text style={styles.filterClear}>Clear</Text>
           </Pressable>
         </View>
-      </View>
-
-      <View style={styles.sessionStats}>
-        <Text style={styles.repCount}>{item.reps} reps</Text>
-        <Text style={styles.scoreText}>{item.score}%</Text>
-        <DeltaBadge sessions={sessions} session={item} />
-      </View>
-
-      {item.topFlag && (
-        <Text style={styles.flagLabel}>
-          {FLAG_LABELS[item.topFlag] ?? item.topFlag}
-        </Text>
       )}
-    </View>
+    </>
   );
 
   return (
@@ -145,7 +267,7 @@ export default function HistoryScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Session History</Text>
-          {sessions.length > 0 && (
+          {allSessions.length > 0 && (
             <TouchableOpacity
               onPress={handleClearAll}
               style={styles.clearAllButton}
@@ -156,10 +278,9 @@ export default function HistoryScreen() {
             </TouchableOpacity>
           )}
         </View>
-        <Text style={styles.subtitle}>Last {MAX_DISPLAY} sessions</Text>
       </View>
 
-      {sessions.length === 0 ? (
+      {allSessions.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>No sessions yet</Text>
           <Text style={styles.emptySubtitle}>
@@ -168,9 +289,10 @@ export default function HistoryScreen() {
         </View>
       ) : (
         <FlatList
-          data={sessions}
+          data={filteredSessions}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          ListHeaderComponent={ListHeader}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
         />
@@ -199,11 +321,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#ffffff",
   },
-  subtitle: {
-    fontSize: 14,
-    color: "#ffffff50",
-    marginTop: 4,
-  },
   clearAllButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -216,6 +333,96 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#ef4444",
   },
+  // Stats Header
+  statsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: "#1a1a24",
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginHorizontal: 3,
+    alignItems: "center",
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+  statLabel: {
+    fontSize: 11,
+    color: "#ffffff50",
+    marginTop: 4,
+  },
+  // Personal Bests
+  bestsSection: {
+    marginBottom: 20,
+  },
+  bestsTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#ffffff60",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  bestsRow: {
+    gap: 10,
+  },
+  bestCard: {
+    backgroundColor: "#1a1a24",
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    minWidth: 110,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  bestCardActive: {
+    borderColor: "#00E5FF",
+  },
+  bestExercise: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#ffffff80",
+    marginBottom: 6,
+  },
+  bestScore: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#6366f1",
+  },
+  bestDate: {
+    fontSize: 11,
+    color: "#ffffff40",
+    marginTop: 4,
+  },
+  // Filter banner
+  filterBanner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#00E5FF15",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 14,
+  },
+  filterText: {
+    fontSize: 13,
+    color: "#00E5FF",
+    fontWeight: "600",
+  },
+  filterClear: {
+    fontSize: 13,
+    color: "#ffffff60",
+    fontWeight: "500",
+  },
+  // Session list
   list: {
     paddingHorizontal: 20,
     paddingBottom: 40,
@@ -273,10 +480,27 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#ffffffcc",
   },
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   scoreText: {
     fontSize: 15,
     color: "#6366f1",
     fontWeight: "600",
+  },
+  trendUp: {
+    fontSize: 12,
+    color: "#22c55e",
+  },
+  trendDown: {
+    fontSize: 12,
+    color: "#ef4444",
+  },
+  trendNeutral: {
+    fontSize: 12,
+    color: "#ffffff40",
   },
   deltaBadge: {
     paddingHorizontal: 8,
