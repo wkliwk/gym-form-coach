@@ -80,7 +80,7 @@ function detectFlags(pose: Pose): FormFlag[] {
 export function processDeadliftFrame(
   pose: Pose,
   state: DeadliftState
-): { completedRep: boolean; flag: FormFlag | null; state: DeadliftState } {
+): { completedRep: boolean; flag: FormFlag | null; allFlags: FormFlag[]; state: DeadliftState } {
   const lHip = getKeypoint(pose, LEFT_HIP);
   const rHip = getKeypoint(pose, RIGHT_HIP);
   const lKnee = getKeypoint(pose, LEFT_KNEE);
@@ -89,7 +89,7 @@ export function processDeadliftFrame(
   const rShoulder = getKeypoint(pose, RIGHT_SHOULDER);
 
   if ((!lHip && !rHip) || (!lShoulder && !rShoulder)) {
-    return { completedRep: false, flag: null, state };
+    return { completedRep: false, flag: null, allFlags: [], state };
   }
 
   // Hip angle: shoulder-hip-knee
@@ -147,14 +147,15 @@ export function processDeadliftFrame(
         newState.repCount += 1;
         newState.phase = "standing";
 
-        const flag = newState.currentRepFlags[0] ?? null;
+        const allFlags = [...newState.currentRepFlags];
+        const flag = allFlags[0] ?? null;
         newState.currentRepFlags = [];
 
-        return { completedRep: true, flag, state: newState };
+        return { completedRep: true, flag, allFlags, state: newState };
       }
       break;
     }
   }
 
-  return { completedRep: false, flag: null, state: newState };
+  return { completedRep: false, flag: null, allFlags: [], state: newState };
 }

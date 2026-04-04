@@ -1,6 +1,7 @@
 import { useRef, useCallback } from "react";
 import type { Pose } from "@tensorflow-models/pose-detection";
 import type { Exercise, FormFlag, RepRecord } from "../lib/types";
+import { computeRepScore, computeAverageScore } from "../lib/repScoring";
 import {
   createSquatState,
   processSquatFrame,
@@ -48,7 +49,7 @@ export function useRepDetector(exercise: Exercise) {
 
   const processPose = useCallback(
     (pose: Pose): RepEvent | null => {
-      let result: { completedRep: boolean; flag: FormFlag | null };
+      let result: { completedRep: boolean; flag: FormFlag | null; allFlags: FormFlag[] };
 
       switch (exercise) {
         case "squat": {
@@ -83,9 +84,11 @@ export function useRepDetector(exercise: Exercise) {
           flagCounts.current[result.flag] =
             (flagCounts.current[result.flag] ?? 0) + 1;
         }
+        const repScore = computeRepScore(result.allFlags);
         repRecords.current.push({
           repNumber: totalReps.current,
           flag: result.flag,
+          score: repScore,
         });
         return { repNumber: totalReps.current, flag: result.flag };
       }
@@ -96,12 +99,16 @@ export function useRepDetector(exercise: Exercise) {
   );
 
   const getStats = useCallback(() => {
+    const records = [...repRecords.current];
+    const avgScore = records.length > 0
+      ? computeAverageScore(records.map((r) => r.score))
+      : 100;
     return {
       totalReps: totalReps.current,
       flagCounts: { ...flagCounts.current },
       topFlag: getTopFlag(flagCounts.current),
-      score: computeScore(totalReps.current, flagCounts.current),
-      repRecords: [...repRecords.current],
+      score: avgScore,
+      repRecords: records,
     };
   }, []);
 
@@ -134,14 +141,3 @@ function getTopFlag(
   return top;
 }
 
-function computeScore(
-  totalReps: number,
-  counts: Partial<Record<FormFlag, number>>
-): number {
-  if (totalReps === 0) return 100;
-  const flaggedReps = Object.values(counts).reduce(
-    (sum, c) => sum + (c ?? 0),
-    0
-  );
-  return Math.round(Math.max(0, ((totalReps - flaggedReps) / totalReps) * 100));
-}

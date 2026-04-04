@@ -111,7 +111,7 @@ function detectFlags(pose: Pose): FormFlag[] {
 export function processOverheadPressFrame(
   pose: Pose,
   state: OverheadPressState
-): { completedRep: boolean; flag: FormFlag | null; state: OverheadPressState } {
+): { completedRep: boolean; flag: FormFlag | null; allFlags: FormFlag[]; state: OverheadPressState } {
   const lShoulder = getKeypoint(pose, LEFT_SHOULDER);
   const rShoulder = getKeypoint(pose, RIGHT_SHOULDER);
   const lWrist = getKeypoint(pose, LEFT_WRIST);
@@ -121,7 +121,7 @@ export function processOverheadPressFrame(
 
   // Need at least one side of shoulder + wrist visible
   if ((!lShoulder && !rShoulder) || (!lWrist && !rWrist)) {
-    return { completedRep: false, flag: null, state };
+    return { completedRep: false, flag: null, allFlags: [], state };
   }
 
   const shoulderY =
@@ -195,14 +195,15 @@ export function processOverheadPressFrame(
         newState.phase = "bottom";
 
         // Pick the most important flag
-        const flag = newState.currentRepFlags[0] ?? null;
+        const allFlags = [...newState.currentRepFlags];
+        const flag = allFlags[0] ?? null;
         newState.currentRepFlags = [];
 
-        return { completedRep: true, flag, state: newState };
+        return { completedRep: true, flag, allFlags, state: newState };
       }
       break;
     }
   }
 
-  return { completedRep: false, flag: null, state: newState };
+  return { completedRep: false, flag: null, allFlags: [], state: newState };
 }
