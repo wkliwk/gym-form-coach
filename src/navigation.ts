@@ -3,6 +3,8 @@ import type { Exercise, FormFlag, RepRecord, SetRecord } from "./lib/types";
 export type TrainStackParamList = {
   Home: undefined;
   WeeklyReport: undefined;
+  Programs: undefined;
+  ProgramDay: { programId: string; dayNumber: number };
   ExerciseTips: { exerciseType: Exercise };
   Session: {
     exerciseType: Exercise;

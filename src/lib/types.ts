@@ -51,6 +51,35 @@ export const DEFAULT_PREFERENCES: ExercisePreferences = {
   targetReps: 8,
 };
 
+// ── Workout Programs ──────────────────────────────────────────────────────
+
+export interface ProgramExercise {
+  exercise: Exercise;
+  sets: number;
+  reps: number;
+  formThreshold: number;
+}
+
+export interface ProgramDay {
+  dayNumber: number;
+  label: string;
+  exercises: ProgramExercise[];
+}
+
+export interface Program {
+  id: string;
+  name: string;
+  description: string;
+  days: ProgramDay[];
+}
+
+export interface ProgramProgress {
+  programId: string;
+  currentDay: number;
+  completedDays: number[];
+  startedAt: string;
+}
+
 export const FLAG_LABELS: Record<FormFlag, string> = {
   knees_caving: "Knees caving in",
   depth_too_shallow: "Depth too shallow",
