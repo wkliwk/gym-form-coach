@@ -39,6 +39,18 @@ export interface SessionRecord {
   durationMs?: number;
 }
 
+export interface ExercisePreferences {
+  restTimeSeconds: 60 | 90 | 120 | 180;
+  targetSets: number;
+  targetReps: number;
+}
+
+export const DEFAULT_PREFERENCES: ExercisePreferences = {
+  restTimeSeconds: 90,
+  targetSets: 3,
+  targetReps: 8,
+};
+
 export const FLAG_LABELS: Record<FormFlag, string> = {
   knees_caving: "Knees caving in",
   depth_too_shallow: "Depth too shallow",
