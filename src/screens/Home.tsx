@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+  Pressable,
+  ScrollView,
 } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { Exercise } from "../lib/types";
@@ -31,7 +33,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
         <Text style={styles.subtitle}>Choose an exercise to start</Text>
       </View>
 
-      <View style={styles.grid}>
+      <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
         {EXERCISES.map(({ type, emoji, description }) => (
           <TouchableOpacity
             key={type}
@@ -44,12 +46,23 @@ export default function HomeScreen({ navigation }: HomeProps) {
             accessibilityRole="button"
             accessibilityLabel={`Start ${EXERCISE_LABELS[type]} session`}
           >
-            <Text style={styles.cardEmoji}>{emoji}</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardEmoji}>{emoji}</Text>
+              <Pressable
+                style={styles.tipsButton}
+                onPress={() =>
+                  navigation.navigate("ExerciseTips", { exerciseType: type })
+                }
+                accessibilityLabel={`Form tips for ${EXERCISE_LABELS[type]}`}
+              >
+                <Text style={styles.tipsButtonText}>Tips</Text>
+              </Pressable>
+            </View>
             <Text style={styles.cardTitle}>{EXERCISE_LABELS[type]}</Text>
             <Text style={styles.cardDescription}>{description}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -77,6 +90,7 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: 20,
     gap: 12,
+    paddingBottom: 20,
   },
   card: {
     backgroundColor: "#1a1a24",
@@ -85,9 +99,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2a2a3a",
   },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
   cardEmoji: {
     fontSize: 36,
-    marginBottom: 12,
+  },
+  tipsButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#ffffff10",
+    borderWidth: 1,
+    borderColor: "#ffffff20",
+  },
+  tipsButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#00E5FF",
   },
   cardTitle: {
     fontSize: 22,

@@ -10,6 +10,7 @@ import HomeScreen from "./src/screens/Home";
 import Session from "./src/screens/Session";
 import SummaryScreen from "./src/screens/Summary";
 import RestTimerScreen from "./src/screens/RestTimer";
+import ExerciseTipsScreen from "./src/screens/ExerciseTips";
 import HistoryScreen from "./src/screens/History";
 import OnboardingScreen, { ONBOARDING_KEY } from "./src/screens/Onboarding";
 import SettingsScreen from "./src/screens/Settings";
@@ -41,6 +42,7 @@ function TrainStack() {
       }}
     >
       <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="ExerciseTips" component={ExerciseTipsScreen} />
       <Stack.Screen name="Session" component={Session} />
       <Stack.Screen name="RestTimer" component={RestTimerScreen} />
       <Stack.Screen name="Summary" component={SummaryScreen} />
