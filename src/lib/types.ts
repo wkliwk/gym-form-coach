@@ -19,6 +19,14 @@ export interface RepRecord {
   flag: FormFlag | null;
 }
 
+export interface SetRecord {
+  setNumber: number;
+  reps: number;
+  score: number;
+  topFlag: FormFlag | null;
+  repRecords: RepRecord[];
+}
+
 export interface SessionRecord {
   id: string;
   date: string;
@@ -26,6 +34,8 @@ export interface SessionRecord {
   reps: number;
   topFlag: FormFlag | null;
   score: number;
+  sets?: SetRecord[];
+  durationMs?: number;
 }
 
 export const FLAG_LABELS: Record<FormFlag, string> = {
