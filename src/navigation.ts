@@ -14,4 +14,5 @@ export type TrainStackParamList = {
 export type TabParamList = {
   Train: undefined;
   History: undefined;
+  Settings: undefined;
 };

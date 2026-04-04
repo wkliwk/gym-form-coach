@@ -11,6 +11,7 @@ import Session from "./src/screens/Session";
 import SummaryScreen from "./src/screens/Summary";
 import HistoryScreen from "./src/screens/History";
 import OnboardingScreen, { ONBOARDING_KEY } from "./src/screens/Onboarding";
+import SettingsScreen from "./src/screens/Settings";
 
 const DarkTheme = {
   ...DefaultTheme,
@@ -53,6 +54,10 @@ function HistoryIcon({ color }: { color: string }) {
   return <Text style={{ fontSize: 20, color }}>📊</Text>;
 }
 
+function SettingsIcon({ color }: { color: string }) {
+  return <Text style={{ fontSize: 20, color }}>⚙️</Text>;
+}
+
 function MainApp() {
   return (
     <NavigationContainer theme={DarkTheme}>
@@ -80,6 +85,11 @@ function MainApp() {
           name="History"
           component={HistoryScreen}
           options={{ tabBarIcon: HistoryIcon }}
+        />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ tabBarIcon: SettingsIcon }}
         />
       </Tab.Navigator>
       <StatusBar style="light" />
