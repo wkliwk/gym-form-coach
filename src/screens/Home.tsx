@@ -29,7 +29,15 @@ export default function HomeScreen({ navigation }: HomeProps) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Gym Form Coach</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>Gym Form Coach</Text>
+          <TouchableOpacity
+            style={styles.reportButton}
+            onPress={() => navigation.navigate("WeeklyReport")}
+          >
+            <Text style={styles.reportButtonText}>Weekly Report</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.subtitle}>Choose an exercise to start</Text>
       </View>
 
@@ -76,6 +84,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 40,
     paddingBottom: 24,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  reportButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#6366f120",
+    borderWidth: 1,
+    borderColor: "#6366f140",
+  },
+  reportButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#6366f1",
   },
   title: {
     fontSize: 32,
