@@ -71,6 +71,16 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
           {sets && sets.length > 1 ? "Workout Complete" : "Session Complete"}
         </Text>
 
+        {reps === 0 && (
+          <View style={styles.zeroRepCard}>
+            <Text style={styles.zeroRepTitle}>No Reps Detected</Text>
+            <Text style={styles.zeroRepMessage}>
+              Check your camera placement and make sure your full body is
+              visible. Try placing your phone further away.
+            </Text>
+          </View>
+        )}
+
         <View style={styles.card}>
           <Text style={styles.exerciseName}>
             {EXERCISE_LABELS[exercise]}
@@ -413,6 +423,26 @@ const styles = StyleSheet.create({
     color: "#ffffff40",
     textAlign: "center",
     marginTop: 8,
+  },
+  // Zero rep warning
+  zeroRepCard: {
+    backgroundColor: "#f59e0b20",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#f59e0b40",
+  },
+  zeroRepTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#f59e0b",
+    marginBottom: 8,
+  },
+  zeroRepMessage: {
+    fontSize: 14,
+    color: "#ffffffcc",
+    lineHeight: 20,
   },
   // Set rows
   setRow: {

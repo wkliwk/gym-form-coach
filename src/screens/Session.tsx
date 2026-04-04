@@ -79,11 +79,18 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
     enabled: permissionState === "granted" && !showGuide,
   });
 
+  // Track no-landmarks hint
+  const [showNoLandmarksHint, setShowNoLandmarksHint] = useState(false);
+  const lastPoseTime = useRef(0);
+  const noLandmarksTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Process each pose frame through the form analyser
   const prevPosesRef = useRef(poses);
   useEffect(() => {
     if (poses === prevPosesRef.current || poses.length === 0 || showGuide) return;
     prevPosesRef.current = poses;
+    lastPoseTime.current = Date.now();
+    setShowNoLandmarksHint(false);
 
     const pose = poses[0];
     const event = processPose(pose);
@@ -93,6 +100,21 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
       setLastCueRep(event.repNumber);
     }
   }, [poses, processPose, showGuide]);
+
+  // Show hint if no poses detected for 5+ seconds after model is ready
+  useEffect(() => {
+    if (!modelReady || showGuide) return;
+    noLandmarksTimer.current = setInterval(() => {
+      if (lastPoseTime.current > 0 && Date.now() - lastPoseTime.current > 5000) {
+        setShowNoLandmarksHint(true);
+      } else if (lastPoseTime.current === 0 && Date.now() - (lastPoseTime.current || Date.now()) > 5000) {
+        setShowNoLandmarksHint(true);
+      }
+    }, 1000);
+    return () => {
+      if (noLandmarksTimer.current) clearInterval(noLandmarksTimer.current);
+    };
+  }, [modelReady, showGuide]);
 
   const handleFinishSet = useCallback(() => {
     const stats = getStats();
@@ -231,6 +253,15 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
         </View>
       )}
 
+      {/* No landmarks hint */}
+      {showNoLandmarksHint && modelReady && (
+        <View style={styles.hintBadge} pointerEvents="none">
+          <Text style={styles.hintText}>
+            Make sure your full body is visible in the camera
+          </Text>
+        </View>
+      )}
+
       {/* Safety banner — always visible during session */}
       <SafetyBanner />
 
@@ -345,6 +376,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     fontVariant: ["tabular-nums"],
+  },
+  // Hint
+  hintBadge: {
+    position: "absolute",
+    bottom: Platform.OS === "ios" ? 140 : 120,
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(245,158,11,0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  hintText: {
+    color: "#000",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
   // End Session
   endSessionContainer: {
