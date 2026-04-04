@@ -41,10 +41,12 @@ import {
 type SessionProps = NativeStackScreenProps<TrainStackParamList, "Session">;
 
 export default function Session({ route, navigation }: SessionProps): React.ReactElement {
-  const { exerciseType } = route.params;
+  const { exerciseType, setNumber = 0, previousSets = [], workoutStartTime } = route.params;
+  const currentSet = setNumber || (previousSets.length + 1);
+  const sessionStartTime = useRef(workoutStartTime || Date.now());
 
-  // Camera guide shown before first rep
-  const [showGuide, setShowGuide] = useState(true);
+  // Camera guide shown only for first set
+  const [showGuide, setShowGuide] = useState(currentSet === 1);
 
   const { cameraRef, permissionState, requestPermission, openSettings } =
     useCamera();
@@ -92,17 +94,26 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
     }
   }, [poses, processPose, showGuide]);
 
-  const handleEndSession = useCallback(() => {
+  const handleFinishSet = useCallback(() => {
     const stats = getStats();
     trackSessionEnd(exerciseType, stats.totalReps, stats.score);
-    navigation.navigate("Summary", {
-      exercise: exerciseType,
+
+    const thisSet = {
+      setNumber: currentSet,
       reps: stats.totalReps,
-      topFlag: stats.topFlag,
       score: stats.score,
+      topFlag: stats.topFlag,
       repRecords: stats.repRecords,
+    };
+    const allSets = [...previousSets, thisSet];
+
+    // Navigate to rest timer (user can choose to continue or end)
+    navigation.replace("RestTimer", {
+      exerciseType,
+      completedSets: allSets,
+      workoutStartTime: sessionStartTime.current,
     });
-  }, [navigation, exerciseType, getStats]);
+  }, [navigation, exerciseType, getStats, currentSet, previousSets]);
 
   const handleGuideReady = useCallback(() => {
     setShowGuide(false);
@@ -194,9 +205,11 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
         />
       )}
 
-      {/* Exercise name + rep counter header */}
+      {/* Exercise name + set/rep counter header */}
       <View style={styles.exerciseHeader} pointerEvents="none">
-        <Text style={styles.exerciseName}>{EXERCISE_LABELS[exerciseType]}</Text>
+        <Text style={styles.exerciseName}>
+          {EXERCISE_LABELS[exerciseType]} — Set {currentSet}
+        </Text>
         <Text style={styles.repCounter}>{repCount} reps</Text>
       </View>
 
@@ -225,12 +238,12 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
       <View style={styles.endSessionContainer}>
         <TouchableOpacity
           style={styles.endSessionButton}
-          onPress={handleEndSession}
+          onPress={handleFinishSet}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="End session"
         >
-          <Text style={styles.endSessionText}>End Session</Text>
+          <Text style={styles.endSessionText}>Finish Set</Text>
         </TouchableOpacity>
       </View>
     </View>

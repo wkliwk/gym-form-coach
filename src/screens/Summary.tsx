@@ -20,8 +20,16 @@ import type { TrainStackParamList } from "../navigation";
 
 type SummaryProps = NativeStackScreenProps<TrainStackParamList, "Summary">;
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes === 0) return `${seconds}s`;
+  return `${minutes}m ${seconds}s`;
+}
+
 export default function SummaryScreen({ route, navigation }: SummaryProps) {
-  const { exercise, reps, topFlag, score, repRecords } = route.params;
+  const { exercise, reps, topFlag, score, repRecords, sets, durationMs } = route.params;
   const [delta, setDelta] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -33,6 +41,8 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
       reps,
       topFlag,
       score,
+      sets,
+      durationMs,
     };
 
     addSession(session).then(async () => {
@@ -43,7 +53,7 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
         setDelta(reps - prev.reps);
       }
     });
-  }, [exercise, reps, topFlag, score]);
+  }, [exercise, reps, topFlag, score, sets, durationMs]);
 
   const flagLabel = topFlag ? FLAG_LABELS[topFlag] : null;
   const drill = topFlag ? DRILL_SUGGESTIONS[topFlag] : null;
@@ -57,7 +67,9 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>Session Complete</Text>
+        <Text style={styles.title}>
+          {sets && sets.length > 1 ? "Workout Complete" : "Session Complete"}
+        </Text>
 
         <View style={styles.card}>
           <Text style={styles.exerciseName}>
@@ -65,15 +77,31 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
           </Text>
 
           <View style={styles.statsRow}>
+            {sets && sets.length > 1 && (
+              <View style={styles.stat}>
+                <Text style={styles.statValue}>{sets.length}</Text>
+                <Text style={styles.statLabel}>Sets</Text>
+              </View>
+            )}
+
             <View style={styles.stat}>
               <Text style={styles.statValue}>{reps}</Text>
-              <Text style={styles.statLabel}>Reps</Text>
+              <Text style={styles.statLabel}>Total Reps</Text>
             </View>
 
             <View style={styles.stat}>
               <Text style={styles.statValue}>{score}%</Text>
-              <Text style={styles.statLabel}>Form Score</Text>
+              <Text style={styles.statLabel}>
+                {sets && sets.length > 1 ? "Avg Score" : "Form Score"}
+              </Text>
             </View>
+
+            {durationMs != null && (
+              <View style={styles.stat}>
+                <Text style={styles.statValue}>{formatDuration(durationMs)}</Text>
+                <Text style={styles.statLabel}>Duration</Text>
+              </View>
+            )}
 
             {delta !== null && (
               <View style={styles.stat}>
@@ -91,6 +119,25 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
             )}
           </View>
         </View>
+
+        {/* Per-set breakdown */}
+        {sets && sets.length > 1 && (
+          <View style={styles.breakdownCard}>
+            <Text style={styles.sectionTitle}>Sets</Text>
+            {sets.map((set) => (
+              <View key={set.setNumber} style={styles.setRow}>
+                <Text style={styles.setNumber}>Set {set.setNumber}</Text>
+                <Text style={styles.setReps}>{set.reps} reps</Text>
+                <Text style={styles.setScore}>{set.score}%</Text>
+                {set.topFlag && (
+                  <Text style={styles.setFlag}>
+                    {FLAG_LABELS[set.topFlag]}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Rep-by-rep breakdown */}
         {repRecords.length > 0 && (
@@ -208,13 +255,14 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: "row",
-    gap: 24,
+    flexWrap: "wrap",
+    gap: 20,
   },
   stat: {
     alignItems: "center",
   },
   statValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "700",
     color: "#ffffff",
   },
@@ -365,6 +413,38 @@ const styles = StyleSheet.create({
     color: "#ffffff40",
     textAlign: "center",
     marginTop: 8,
+  },
+  // Set rows
+  setRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginBottom: 4,
+    gap: 12,
+  },
+  setNumber: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ffffff80",
+    width: 48,
+  },
+  setReps: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ffffffcc",
+  },
+  setScore: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6366f1",
+  },
+  setFlag: {
+    fontSize: 12,
+    color: "#f59e0b",
+    flex: 1,
+    textAlign: "right",
   },
   doneButton: {
     backgroundColor: "#6366f1",
