@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+  ScrollView,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { SessionRecord } from "../lib/types";
@@ -14,12 +15,13 @@ import {
   EXERCISE_LABELS,
 } from "../lib/types";
 import { addSession, loadSessions, findPreviousSession } from "../lib/sessionStorage";
+import { detectFatigue, findBestWorstReps } from "../lib/formInsights";
 import type { TrainStackParamList } from "../navigation";
 
 type SummaryProps = NativeStackScreenProps<TrainStackParamList, "Summary">;
 
 export default function SummaryScreen({ route, navigation }: SummaryProps) {
-  const { exercise, reps, topFlag, score } = route.params;
+  const { exercise, reps, topFlag, score, repRecords } = route.params;
   const [delta, setDelta] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -45,15 +47,16 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
 
   const flagLabel = topFlag ? FLAG_LABELS[topFlag] : null;
   const drill = topFlag ? DRILL_SUGGESTIONS[topFlag] : null;
+  const fatigue = detectFatigue(repRecords);
+  const { bestRep, worstRep } = findBestWorstReps(repRecords);
 
   const handleDone = () => {
-    // Pop all the way back to Home
     navigation.popToTop();
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContainer}>
         <Text style={styles.title}>Session Complete</Text>
 
         <View style={styles.card}>
@@ -89,6 +92,58 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
           </View>
         </View>
 
+        {/* Rep-by-rep breakdown */}
+        {repRecords.length > 0 && (
+          <View style={styles.breakdownCard}>
+            <Text style={styles.sectionTitle}>Rep Breakdown</Text>
+            {repRecords.map((rep) => {
+              const isBest = rep.repNumber === bestRep;
+              const isWorst = rep.repNumber === worstRep;
+              const hasFlag = rep.flag !== null;
+              const barColor = hasFlag ? "#f59e0b" : "#22c55e";
+
+              return (
+                <View
+                  key={rep.repNumber}
+                  style={[
+                    styles.repRow,
+                    isBest && styles.repRowBest,
+                    isWorst && styles.repRowWorst,
+                  ]}
+                >
+                  <View style={styles.repNumberContainer}>
+                    <Text style={styles.repNumber}>{rep.repNumber}</Text>
+                  </View>
+                  <View style={styles.repBarContainer}>
+                    <View
+                      style={[styles.repBar, { backgroundColor: barColor }]}
+                    />
+                  </View>
+                  <View style={styles.repFlagContainer}>
+                    {hasFlag ? (
+                      <Text style={styles.repFlagText}>
+                        {FLAG_LABELS[rep.flag!]}
+                      </Text>
+                    ) : (
+                      <Text style={styles.repGoodText}>Good</Text>
+                    )}
+                  </View>
+                  {isBest && <Text style={styles.repBadge}>Best</Text>}
+                  {isWorst && <Text style={styles.repBadgeWorst}>Fix</Text>}
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Fatigue indicator */}
+        {fatigue.detected && (
+          <View style={styles.fatigueCard}>
+            <Text style={styles.fatigueTitle}>Form Fatigue Detected</Text>
+            <Text style={styles.fatigueText}>{fatigue.message}</Text>
+          </View>
+        )}
+
         <View style={styles.feedbackCard}>
           {flagLabel ? (
             <>
@@ -111,7 +166,7 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
         {saved && (
           <Text style={styles.savedNote}>Session saved to history</Text>
         )}
-      </View>
+      </ScrollView>
 
       <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
         <Text style={styles.doneButtonText}>Done</Text>
@@ -125,10 +180,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0a0a0f",
   },
-  content: {
+  scrollContent: {
     flex: 1,
+  },
+  scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: 40,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 28,
@@ -165,6 +223,105 @@ const styles = StyleSheet.create({
     color: "#ffffff80",
     marginTop: 4,
   },
+  // Rep breakdown
+  breakdownCard: {
+    backgroundColor: "#1a1a24",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#ffffff60",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 14,
+  },
+  repRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  repRowBest: {
+    backgroundColor: "#22c55e10",
+  },
+  repRowWorst: {
+    backgroundColor: "#f59e0b10",
+  },
+  repNumberContainer: {
+    width: 28,
+  },
+  repNumber: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ffffff80",
+  },
+  repBarContainer: {
+    width: 4,
+    height: 20,
+    marginRight: 12,
+  },
+  repBar: {
+    width: 4,
+    height: 20,
+    borderRadius: 2,
+  },
+  repFlagContainer: {
+    flex: 1,
+  },
+  repFlagText: {
+    fontSize: 13,
+    color: "#f59e0b",
+  },
+  repGoodText: {
+    fontSize: 13,
+    color: "#22c55e",
+  },
+  repBadge: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#22c55e",
+    backgroundColor: "#22c55e20",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: "hidden",
+  },
+  repBadgeWorst: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#f59e0b",
+    backgroundColor: "#f59e0b20",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: "hidden",
+  },
+  // Fatigue
+  fatigueCard: {
+    backgroundColor: "#ef444420",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#ef444440",
+  },
+  fatigueTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#ef4444",
+    marginBottom: 6,
+  },
+  fatigueText: {
+    fontSize: 14,
+    color: "#ffffffcc",
+    lineHeight: 20,
+  },
+  // Feedback
   feedbackCard: {
     backgroundColor: "#1a1a24",
     borderRadius: 16,

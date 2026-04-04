@@ -14,6 +14,11 @@ export type FormFlag =
   | "uneven_press"
   | "incomplete_lockout";
 
+export interface RepRecord {
+  repNumber: number;
+  flag: FormFlag | null;
+}
+
 export interface SessionRecord {
   id: string;
   date: string;

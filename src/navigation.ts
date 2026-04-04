@@ -1,4 +1,4 @@
-import type { Exercise, FormFlag } from "./lib/types";
+import type { Exercise, FormFlag, RepRecord } from "./lib/types";
 
 export type TrainStackParamList = {
   Home: undefined;
@@ -8,6 +8,7 @@ export type TrainStackParamList = {
     reps: number;
     topFlag: FormFlag | null;
     score: number;
+    repRecords: RepRecord[];
   };
 };
 

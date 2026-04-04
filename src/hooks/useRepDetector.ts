@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 import type { Pose } from "@tensorflow-models/pose-detection";
-import type { Exercise, FormFlag } from "../lib/types";
+import type { Exercise, FormFlag, RepRecord } from "../lib/types";
 import {
   createSquatState,
   processSquatFrame,
@@ -44,6 +44,7 @@ export function useRepDetector(exercise: Exercise) {
 
   const totalReps = useRef(0);
   const flagCounts = useRef<Partial<Record<FormFlag, number>>>({});
+  const repRecords = useRef<RepRecord[]>([]);
 
   const processPose = useCallback(
     (pose: Pose): RepEvent | null => {
@@ -82,6 +83,10 @@ export function useRepDetector(exercise: Exercise) {
           flagCounts.current[result.flag] =
             (flagCounts.current[result.flag] ?? 0) + 1;
         }
+        repRecords.current.push({
+          repNumber: totalReps.current,
+          flag: result.flag,
+        });
         return { repNumber: totalReps.current, flag: result.flag };
       }
 
@@ -96,6 +101,7 @@ export function useRepDetector(exercise: Exercise) {
       flagCounts: { ...flagCounts.current },
       topFlag: getTopFlag(flagCounts.current),
       score: computeScore(totalReps.current, flagCounts.current),
+      repRecords: [...repRecords.current],
     };
   }, []);
 
@@ -108,6 +114,7 @@ export function useRepDetector(exercise: Exercise) {
     };
     totalReps.current = 0;
     flagCounts.current = {};
+    repRecords.current = [];
   }, []);
 
   return { processPose, getStats, reset };
