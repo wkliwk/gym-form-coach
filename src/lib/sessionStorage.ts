@@ -27,6 +27,16 @@ export async function addSession(session: SessionRecord): Promise<void> {
   await saveSessions(sessions);
 }
 
+export async function deleteSession(id: string): Promise<void> {
+  const sessions = await loadSessions();
+  const filtered = sessions.filter((s) => s.id !== id);
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+}
+
+export async function clearAllSessions(): Promise<void> {
+  await AsyncStorage.removeItem(STORAGE_KEY);
+}
+
 export function findPreviousSession(
   sessions: SessionRecord[],
   exercise: string,
