@@ -18,6 +18,18 @@ jest.mock("expo-haptics", () => ({
   },
 }));
 
+// Mock expo-sharing
+jest.mock("expo-sharing", () => ({
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  shareAsync: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock expo-file-system
+jest.mock("expo-file-system", () => ({
+  cacheDirectory: "/tmp/",
+  writeAsStringAsync: jest.fn(() => Promise.resolve()),
+}));
+
 // Mock expo-mail-composer
 jest.mock("expo-mail-composer", () => ({
   isAvailableAsync: jest.fn(() => Promise.resolve(true)),
