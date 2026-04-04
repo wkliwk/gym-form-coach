@@ -100,6 +100,7 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
       reps: stats.totalReps,
       topFlag: stats.topFlag,
       score: stats.score,
+      repRecords: stats.repRecords,
     });
   }, [navigation, exerciseType, getStats]);
 
