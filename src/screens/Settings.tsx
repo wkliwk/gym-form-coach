@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
+import FeedbackScreen from "./Feedback";
 
 const APP_NAME = Constants.expoConfig?.name ?? "Gym Form Coach";
 const APP_VERSION = Constants.expoConfig?.version ?? "unknown";
@@ -43,11 +44,17 @@ function buildFeedbackTemplate(): string {
 }
 
 export default function SettingsScreen() {
+  const [showFeedback, setShowFeedback] = useState(false);
+
   const handleCopyFeedback = async () => {
     const template = buildFeedbackTemplate();
     await Clipboard.setStringAsync(template);
     Alert.alert("Copied", "Bug report template copied to clipboard.");
   };
+
+  if (showFeedback) {
+    return <FeedbackScreen onClose={() => setShowFeedback(false)} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -84,10 +91,23 @@ export default function SettingsScreen() {
 
         <TouchableOpacity
           style={styles.feedbackButton}
+          onPress={() => setShowFeedback(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.feedbackButtonText}>Send Feedback</Text>
+          <Text style={styles.feedbackHint}>
+            Report bugs, request features, or share thoughts
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.feedbackButton, { marginTop: 8 }]}
           onPress={handleCopyFeedback}
           activeOpacity={0.7}
         >
-          <Text style={styles.feedbackButtonText}>Copy Bug Report Template</Text>
+          <Text style={[styles.feedbackButtonText, { color: "#ffffff80" }]}>
+            Copy Bug Report Template
+          </Text>
           <Text style={styles.feedbackHint}>
             Paste into email or message to report issues
           </Text>

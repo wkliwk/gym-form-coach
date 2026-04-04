@@ -18,6 +18,12 @@ jest.mock("expo-haptics", () => ({
   },
 }));
 
+// Mock expo-mail-composer
+jest.mock("expo-mail-composer", () => ({
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  composeAsync: jest.fn(() => Promise.resolve({ status: "sent" })),
+}));
+
 // Mock @react-native-async-storage/async-storage
 jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock")
