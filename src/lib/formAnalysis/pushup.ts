@@ -1,7 +1,6 @@
-import type { Keypoint, Pose } from "@tensorflow-models/pose-detection";
+import type { Pose } from "@tensorflow-models/pose-detection";
 import type { FormFlag } from "../types";
-
-const MIN_CONFIDENCE = 0.3;
+import { angleDeg, getKeypoint } from "../mathUtils";
 
 const LEFT_SHOULDER = 5;
 const RIGHT_SHOULDER = 6;
@@ -27,33 +26,17 @@ export function createPushupState(): PushupState {
   return { phase: "up", repCount: 0, currentRepFlags: [], lowestShoulderY: 0 };
 }
 
-function getKp(pose: Pose, idx: number): Keypoint | null {
-  const kp = pose.keypoints[idx];
-  if (!kp || (kp.score ?? 0) < MIN_CONFIDENCE) return null;
-  return kp;
-}
-
-function angleDeg(a: Keypoint, b: Keypoint, c: Keypoint): number {
-  const ab = { x: a.x - b.x, y: a.y - b.y };
-  const cb = { x: c.x - b.x, y: c.y - b.y };
-  const dot = ab.x * cb.x + ab.y * cb.y;
-  const magAB = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
-  const magCB = Math.sqrt(cb.x * cb.x + cb.y * cb.y);
-  if (magAB === 0 || magCB === 0) return 180;
-  return (Math.acos(Math.max(-1, Math.min(1, dot / (magAB * magCB)))) * 180) / Math.PI;
-}
-
 function detectFlags(pose: Pose): FormFlag[] {
   const flags: FormFlag[] = [];
 
-  const lShoulder = getKp(pose, LEFT_SHOULDER);
-  const rShoulder = getKp(pose, RIGHT_SHOULDER);
-  const lHip = getKp(pose, LEFT_HIP);
-  const rHip = getKp(pose, RIGHT_HIP);
-  const lAnkle = getKp(pose, LEFT_ANKLE);
-  const rAnkle = getKp(pose, RIGHT_ANKLE);
-  const lElbow = getKp(pose, LEFT_ELBOW);
-  const rElbow = getKp(pose, RIGHT_ELBOW);
+  const lShoulder = getKeypoint(pose, LEFT_SHOULDER);
+  const rShoulder = getKeypoint(pose, RIGHT_SHOULDER);
+  const lHip = getKeypoint(pose, LEFT_HIP);
+  const rHip = getKeypoint(pose, RIGHT_HIP);
+  const lAnkle = getKeypoint(pose, LEFT_ANKLE);
+  const rAnkle = getKeypoint(pose, RIGHT_ANKLE);
+  const lElbow = getKeypoint(pose, LEFT_ELBOW);
+  const rElbow = getKeypoint(pose, RIGHT_ELBOW);
 
   // Hips sagging: hip Y significantly below shoulder-ankle line
   if (lShoulder && rShoulder && lHip && rHip && lAnkle && rAnkle) {
@@ -85,12 +68,12 @@ export function processPushupFrame(
   pose: Pose,
   state: PushupState
 ): { completedRep: boolean; flag: FormFlag | null; state: PushupState } {
-  const lShoulder = getKp(pose, LEFT_SHOULDER);
-  const rShoulder = getKp(pose, RIGHT_SHOULDER);
-  const lElbow = getKp(pose, LEFT_ELBOW);
-  const rElbow = getKp(pose, RIGHT_ELBOW);
-  const lWrist = getKp(pose, LEFT_WRIST);
-  const rWrist = getKp(pose, RIGHT_WRIST);
+  const lShoulder = getKeypoint(pose, LEFT_SHOULDER);
+  const rShoulder = getKeypoint(pose, RIGHT_SHOULDER);
+  const lElbow = getKeypoint(pose, LEFT_ELBOW);
+  const rElbow = getKeypoint(pose, RIGHT_ELBOW);
+  const lWrist = getKeypoint(pose, LEFT_WRIST);
+  const rWrist = getKeypoint(pose, RIGHT_WRIST);
 
   if ((!lShoulder && !rShoulder) || (!lElbow && !rElbow)) {
     return { completedRep: false, flag: null, state };
