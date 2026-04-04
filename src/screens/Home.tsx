@@ -31,12 +31,20 @@ export default function HomeScreen({ navigation }: HomeProps) {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Gym Form Coach</Text>
-          <TouchableOpacity
-            style={styles.reportButton}
-            onPress={() => navigation.navigate("WeeklyReport")}
-          >
-            <Text style={styles.reportButtonText}>Weekly Report</Text>
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.reportButton}
+              onPress={() => navigation.navigate("Programs")}
+            >
+              <Text style={styles.reportButtonText}>Programs</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.reportButton}
+              onPress={() => navigation.navigate("WeeklyReport")}
+            >
+              <Text style={styles.reportButtonText}>Report</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={styles.subtitle}>Choose an exercise to start</Text>
       </View>
@@ -89,6 +97,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  headerButtons: {
+    flexDirection: "row",
+    gap: 8,
   },
   reportButton: {
     paddingHorizontal: 12,
