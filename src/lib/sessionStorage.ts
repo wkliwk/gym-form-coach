@@ -1,7 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { Exercise, SessionRecord } from "./types";
+import type { Exercise, ExercisePreferences, SessionRecord } from "./types";
+import { DEFAULT_PREFERENCES } from "./types";
 
 const STORAGE_KEY = "@gym_form_coach/sessions";
+const PREFS_KEY = "@gym_form_coach/exercise_preferences";
 const MAX_SESSIONS = 50;
 
 export async function saveSessions(
@@ -135,4 +137,34 @@ export function getScoreTrend(
   if (session.score > prev.score) return 1;
   if (session.score < prev.score) return -1;
   return 0;
+}
+
+// ── Exercise Preferences ──────────────────────────────────────────────────
+
+export async function loadAllPreferences(): Promise<
+  Partial<Record<Exercise, ExercisePreferences>>
+> {
+  const raw = await AsyncStorage.getItem(PREFS_KEY);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as Partial<Record<Exercise, ExercisePreferences>>;
+  } catch {
+    return {};
+  }
+}
+
+export async function loadPreferences(
+  exercise: Exercise
+): Promise<ExercisePreferences> {
+  const all = await loadAllPreferences();
+  return all[exercise] ?? { ...DEFAULT_PREFERENCES };
+}
+
+export async function savePreferences(
+  exercise: Exercise,
+  prefs: ExercisePreferences
+): Promise<void> {
+  const all = await loadAllPreferences();
+  all[exercise] = prefs;
+  await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(all));
 }

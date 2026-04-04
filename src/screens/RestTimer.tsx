@@ -11,6 +11,7 @@ import Svg, { Circle } from "react-native-svg";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { TrainStackParamList } from "../navigation";
 import { EXERCISE_LABELS } from "../lib/types";
+import { loadPreferences } from "../lib/sessionStorage";
 
 type RestTimerProps = NativeStackScreenProps<TrainStackParamList, "RestTimer">;
 
@@ -29,6 +30,17 @@ export default function RestTimerScreen({
   const [remaining, setRemaining] = useState(90);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasVibrated = useRef(false);
+  const prefsLoaded = useRef(false);
+
+  // Load saved default rest time
+  useEffect(() => {
+    if (prefsLoaded.current) return;
+    prefsLoaded.current = true;
+    loadPreferences(exerciseType).then((prefs) => {
+      setRestDuration(prefs.restTimeSeconds);
+      setRemaining(prefs.restTimeSeconds);
+    });
+  }, [exerciseType]);
 
   const startTimer = useCallback(
     (duration: number) => {

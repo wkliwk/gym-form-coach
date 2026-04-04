@@ -30,8 +30,9 @@ import PoseOverlay from "../components/PoseOverlay";
 import CueBanner from "../components/CueBanner";
 import SafetyBanner from "../components/SafetyBanner";
 import CameraGuide from "../components/CameraGuide";
-import { EXERCISE_LABELS } from "../lib/types";
-import type { FormFlag } from "../lib/types";
+import { EXERCISE_LABELS, DEFAULT_PREFERENCES } from "../lib/types";
+import type { ExercisePreferences, FormFlag } from "../lib/types";
+import { loadPreferences } from "../lib/sessionStorage";
 import type { TrainStackParamList } from "../navigation";
 import {
   trackSessionStart,
@@ -53,6 +54,12 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
 
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 });
+
+  // Exercise preferences
+  const [prefs, setPrefs] = useState<ExercisePreferences>({ ...DEFAULT_PREFERENCES });
+  useEffect(() => {
+    loadPreferences(exerciseType).then(setPrefs);
+  }, [exerciseType]);
 
   // Rep detection + form analysis
   const { processPose, getStats, reset } = useRepDetector(exerciseType);
@@ -231,8 +238,11 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
       <View style={styles.exerciseHeader} pointerEvents="none">
         <Text style={styles.exerciseName}>
           {EXERCISE_LABELS[exerciseType]} — Set {currentSet}
+          {prefs.targetSets > 0 ? ` of ${prefs.targetSets}` : ""}
         </Text>
-        <Text style={styles.repCounter}>{repCount} reps</Text>
+        <Text style={styles.repCounter}>
+          {repCount}{prefs.targetReps > 0 ? ` / ${prefs.targetReps}` : ""} reps
+        </Text>
       </View>
 
       {/* Audio + visual cue banner */}
