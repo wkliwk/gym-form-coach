@@ -1,4 +1,4 @@
-export type Exercise = "squat" | "deadlift" | "pushup";
+export type Exercise = "squat" | "deadlift" | "pushup" | "overheadPress";
 
 export type FormFlag =
   | "knees_caving"
@@ -9,7 +9,10 @@ export type FormFlag =
   | "bar_drift"
   | "hips_sagging"
   | "elbows_flaring"
-  | "incomplete_range";
+  | "incomplete_range"
+  | "excessive_back_arch"
+  | "uneven_press"
+  | "incomplete_lockout";
 
 export interface SessionRecord {
   id: string;
@@ -30,6 +33,9 @@ export const FLAG_LABELS: Record<FormFlag, string> = {
   hips_sagging: "Hips sagging",
   elbows_flaring: "Elbows flaring out",
   incomplete_range: "Incomplete range of motion",
+  excessive_back_arch: "Excessive back arch",
+  uneven_press: "Uneven press",
+  incomplete_lockout: "Incomplete lockout",
 };
 
 export const DRILL_SUGGESTIONS: Record<FormFlag, string> = {
@@ -42,10 +48,14 @@ export const DRILL_SUGGESTIONS: Record<FormFlag, string> = {
   hips_sagging: "Strengthen your core with planks and dead bugs",
   elbows_flaring: "Tuck elbows at 45° — try diamond push-ups to build the pattern",
   incomplete_range: "Slow down — use tempo push-ups (3 seconds down, 3 up)",
+  excessive_back_arch: "Brace your core harder — practice with wall-supported presses",
+  uneven_press: "Focus on pressing evenly — try single-arm dumbbell presses to find imbalances",
+  incomplete_lockout: "Press until elbows are fully locked — use lighter weight to build the pattern",
 };
 
 export const EXERCISE_LABELS: Record<Exercise, string> = {
   squat: "Squat",
   deadlift: "Deadlift",
   pushup: "Push-up",
+  overheadPress: "Overhead Press",
 };

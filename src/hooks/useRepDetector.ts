@@ -16,6 +16,11 @@ import {
   processPushupFrame,
   type PushupState,
 } from "../lib/formAnalysis/pushup";
+import {
+  createOverheadPressState,
+  processOverheadPressFrame,
+  type OverheadPressState,
+} from "../lib/formAnalysis/overheadPress";
 
 export interface RepEvent {
   repNumber: number;
@@ -26,6 +31,7 @@ interface RepDetectorState {
   squat: SquatState;
   deadlift: DeadliftState;
   pushup: PushupState;
+  overheadPress: OverheadPressState;
 }
 
 export function useRepDetector(exercise: Exercise) {
@@ -33,6 +39,7 @@ export function useRepDetector(exercise: Exercise) {
     squat: createSquatState(),
     deadlift: createDeadliftState(),
     pushup: createPushupState(),
+    overheadPress: createOverheadPressState(),
   });
 
   const totalReps = useRef(0);
@@ -58,6 +65,12 @@ export function useRepDetector(exercise: Exercise) {
         case "pushup": {
           const r = processPushupFrame(pose, stateRef.current.pushup);
           stateRef.current.pushup = r.state;
+          result = r;
+          break;
+        }
+        case "overheadPress": {
+          const r = processOverheadPressFrame(pose, stateRef.current.overheadPress);
+          stateRef.current.overheadPress = r.state;
           result = r;
           break;
         }
@@ -91,6 +104,7 @@ export function useRepDetector(exercise: Exercise) {
       squat: createSquatState(),
       deadlift: createDeadliftState(),
       pushup: createPushupState(),
+      overheadPress: createOverheadPressState(),
     };
     totalReps.current = 0;
     flagCounts.current = {};

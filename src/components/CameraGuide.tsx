@@ -21,6 +21,8 @@ const GUIDE_TEXT: Record<Exercise, string> = {
     "Place your phone 6–8 feet away at hip height, angled to see your side profile. Ensure the bar and your full body are visible.",
   pushup:
     "Place your phone 3–4 feet away at floor level, angled to see your side profile. Ensure your full body is visible.",
+  overheadPress:
+    "Place your phone 6–8 feet away at waist height, facing you front-on. Ensure your full body from feet to hands overhead is visible.",
 };
 
 export default function CameraGuide({ exercise, onReady }: CameraGuideProps) {
