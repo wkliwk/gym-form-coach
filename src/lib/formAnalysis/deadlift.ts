@@ -1,7 +1,7 @@
-import type { Keypoint, Pose } from "@tensorflow-models/pose-detection";
+import type { Keypoint } from "@tensorflow-models/pose-detection";
+import type { Pose } from "@tensorflow-models/pose-detection";
 import type { FormFlag } from "../types";
-
-const MIN_CONFIDENCE = 0.3;
+import { angleDeg, getKeypoint } from "../mathUtils";
 
 const LEFT_HIP = 11;
 const RIGHT_HIP = 12;
@@ -24,35 +24,19 @@ export function createDeadliftState(): DeadliftState {
   return { phase: "standing", repCount: 0, currentRepFlags: [] };
 }
 
-function getKp(pose: Pose, idx: number): Keypoint | null {
-  const kp = pose.keypoints[idx];
-  if (!kp || (kp.score ?? 0) < MIN_CONFIDENCE) return null;
-  return kp;
-}
-
 function midY(a: Keypoint, b: Keypoint): number {
   return (a.y + b.y) / 2;
-}
-
-function angleDeg(a: Keypoint, b: Keypoint, c: Keypoint): number {
-  const ab = { x: a.x - b.x, y: a.y - b.y };
-  const cb = { x: c.x - b.x, y: c.y - b.y };
-  const dot = ab.x * cb.x + ab.y * cb.y;
-  const magAB = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
-  const magCB = Math.sqrt(cb.x * cb.x + cb.y * cb.y);
-  if (magAB === 0 || magCB === 0) return 180;
-  return (Math.acos(Math.max(-1, Math.min(1, dot / (magAB * magCB)))) * 180) / Math.PI;
 }
 
 function detectFlags(pose: Pose): FormFlag[] {
   const flags: FormFlag[] = [];
 
-  const lShoulder = getKp(pose, LEFT_SHOULDER);
-  const rShoulder = getKp(pose, RIGHT_SHOULDER);
-  const lHip = getKp(pose, LEFT_HIP);
-  const rHip = getKp(pose, RIGHT_HIP);
-  const lKnee = getKp(pose, LEFT_KNEE);
-  const rKnee = getKp(pose, RIGHT_KNEE);
+  const lShoulder = getKeypoint(pose, LEFT_SHOULDER);
+  const rShoulder = getKeypoint(pose, RIGHT_SHOULDER);
+  const lHip = getKeypoint(pose, LEFT_HIP);
+  const rHip = getKeypoint(pose, RIGHT_HIP);
+  const lKnee = getKeypoint(pose, LEFT_KNEE);
+  const rKnee = getKeypoint(pose, RIGHT_KNEE);
 
   // Rounded lower back: shoulder Y significantly below hip Y during lift
   // (in side view, excessive rounding shows shoulders dropping relative to hips)
@@ -80,8 +64,8 @@ function detectFlags(pose: Pose): FormFlag[] {
   }
 
   // Bar drift: shoulders ahead of ankles (X distance in side view)
-  const lAnkle = getKp(pose, LEFT_ANKLE);
-  const rAnkle = getKp(pose, RIGHT_ANKLE);
+  const lAnkle = getKeypoint(pose, LEFT_ANKLE);
+  const rAnkle = getKeypoint(pose, RIGHT_ANKLE);
   if (lShoulder && rShoulder && lAnkle && rAnkle) {
     const shoulderX = (lShoulder.x + rShoulder.x) / 2;
     const ankleX = (lAnkle.x + rAnkle.x) / 2;
@@ -97,12 +81,12 @@ export function processDeadliftFrame(
   pose: Pose,
   state: DeadliftState
 ): { completedRep: boolean; flag: FormFlag | null; state: DeadliftState } {
-  const lHip = getKp(pose, LEFT_HIP);
-  const rHip = getKp(pose, RIGHT_HIP);
-  const lKnee = getKp(pose, LEFT_KNEE);
-  const rKnee = getKp(pose, RIGHT_KNEE);
-  const lShoulder = getKp(pose, LEFT_SHOULDER);
-  const rShoulder = getKp(pose, RIGHT_SHOULDER);
+  const lHip = getKeypoint(pose, LEFT_HIP);
+  const rHip = getKeypoint(pose, RIGHT_HIP);
+  const lKnee = getKeypoint(pose, LEFT_KNEE);
+  const rKnee = getKeypoint(pose, RIGHT_KNEE);
+  const lShoulder = getKeypoint(pose, LEFT_SHOULDER);
+  const rShoulder = getKeypoint(pose, RIGHT_SHOULDER);
 
   if ((!lHip && !rHip) || (!lShoulder && !rShoulder)) {
     return { completedRep: false, flag: null, state };
