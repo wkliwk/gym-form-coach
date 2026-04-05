@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { initPoseDetector } from "./src/lib/poseEstimation";
+
+// Keep splash screen visible while we load the model
+SplashScreen.preventAutoHideAsync();
 import type { TrainStackParamList, TabParamList } from "./src/navigation";
 import HomeScreen from "./src/screens/Home";
 import Session from "./src/screens/Session";
@@ -113,19 +118,29 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>("loading");
 
   useEffect(() => {
-    async function checkOnboarding() {
+    async function init() {
       try {
-        const value = await AsyncStorage.getItem(ONBOARDING_KEY);
-        if (value === "true") {
+        // Start model loading and onboarding check in parallel
+        const [, onboardingValue] = await Promise.all([
+          initPoseDetector().catch(() => {
+            // Model load failure is non-fatal — Session screen will retry
+          }),
+          AsyncStorage.getItem(ONBOARDING_KEY),
+        ]);
+
+        if (onboardingValue === "true") {
           setAppState("main");
         } else {
           setAppState("onboarding");
         }
       } catch {
         setAppState("main");
+      } finally {
+        // Hide splash screen once app is ready
+        await SplashScreen.hideAsync();
       }
     }
-    checkOnboarding();
+    init();
   }, []);
 
   if (appState === "loading") {
