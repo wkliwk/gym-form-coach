@@ -18,6 +18,12 @@ jest.mock("expo-haptics", () => ({
   },
 }));
 
+// Mock expo-splash-screen
+jest.mock("expo-splash-screen", () => ({
+  preventAutoHideAsync: jest.fn(() => Promise.resolve()),
+  hideAsync: jest.fn(() => Promise.resolve()),
+}));
+
 // Mock expo-sharing
 jest.mock("expo-sharing", () => ({
   isAvailableAsync: jest.fn(() => Promise.resolve(true)),

@@ -77,9 +77,14 @@ export async function initPoseDetector(): Promise<void> {
   if (detector !== null || isInitializing) return;
 
   isInitializing = true;
+  const startTime = Date.now();
   try {
     await tf.ready();
+    if (__DEV__) {
+      console.log(`[poseEstimation] TF.js ready in ${Date.now() - startTime}ms, backend: ${tf.getBackend()}`);
+    }
 
+    const modelStart = Date.now();
     detector = await poseDetection.createDetector(
       poseDetection.SupportedModels.MoveNet,
       {
@@ -88,9 +93,17 @@ export async function initPoseDetector(): Promise<void> {
         minPoseScore: 0.25,
       },
     );
+    if (__DEV__) {
+      console.log(`[poseEstimation] MoveNet loaded in ${Date.now() - modelStart}ms (total: ${Date.now() - startTime}ms)`);
+    }
   } finally {
     isInitializing = false;
   }
+}
+
+/** Check if the pose detector is already initialized. */
+export function isDetectorReady(): boolean {
+  return detector !== null;
 }
 
 /**
@@ -106,6 +119,7 @@ export async function estimatePosesFromBase64(
   if (detector === null) return [];
 
   let imageTensor: tf.Tensor3D | null = null;
+  const inferenceStart = __DEV__ ? Date.now() : 0;
   try {
     // Convert base64 JPEG → Uint8Array → tf.Tensor3D
     const binaryStr = atob(base64Jpeg);
@@ -116,6 +130,12 @@ export async function estimatePosesFromBase64(
 
     imageTensor = decodeJpeg(bytes);
     const poses = await detector.estimatePoses(imageTensor);
+    if (__DEV__ && inferenceStart > 0) {
+      const elapsed = Date.now() - inferenceStart;
+      if (elapsed > 200) {
+        console.log(`[poseEstimation] slow inference: ${elapsed}ms`);
+      }
+    }
     return poses;
   } catch (error) {
     if (__DEV__) {

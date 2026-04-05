@@ -14,6 +14,7 @@ import type { CameraView } from 'expo-camera';
 import type { Pose } from '@tensorflow-models/pose-detection';
 import {
   initPoseDetector,
+  isDetectorReady,
   estimatePosesFromBase64,
   disposePoseDetector,
 } from '../lib/poseEstimation';
@@ -48,22 +49,27 @@ export function usePoseEstimation({
   // FPS tracking
   const frameTimestamps = useRef<number[]>([]);
 
-  // Init TF.js + MoveNet on mount
+  // Init TF.js + MoveNet on mount (may already be loaded by App.tsx preload)
   useEffect(() => {
     let cancelled = false;
 
-    void (async () => {
-      try {
-        await initPoseDetector();
-        if (!cancelled) setModelReady(true);
-      } catch (err) {
-        if (__DEV__) console.error('[usePoseEstimation] init failed:', err);
-      }
-    })();
+    if (isDetectorReady()) {
+      setModelReady(true);
+    } else {
+      void (async () => {
+        try {
+          await initPoseDetector();
+          if (!cancelled) setModelReady(true);
+        } catch (err) {
+          if (__DEV__) console.error('[usePoseEstimation] init failed:', err);
+        }
+      })();
+    }
 
     return () => {
       cancelled = true;
-      disposePoseDetector();
+      // Don't dispose on unmount — model is shared and pre-loaded at app startup
+      // disposePoseDetector() is only needed if we want to fully release memory
     };
   }, []);
 
