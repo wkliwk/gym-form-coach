@@ -18,7 +18,11 @@
       "deploymentTarget": "14.0",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Gym Form Coach uses your camera to analyze exercise form in real time. All processing happens on your device."
+        "NSCameraUsageDescription": "Gym Form Coach uses your camera to watch your exercise form and give you real-time coaching tips. Your video is never recorded or uploaded — all analysis happens privately on your device.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
