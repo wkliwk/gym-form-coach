@@ -65,9 +65,9 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} accessibilityLabel="Session summary">
       <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>
+        <Text style={styles.title} accessibilityRole="header">
           {sets && sets.length > 1 ? "Workout Complete" : "Session Complete"}
         </Text>
 
@@ -99,7 +99,11 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
               <Text style={styles.statLabel}>Total Reps</Text>
             </View>
 
-            <View style={styles.stat}>
+            <View
+              style={styles.stat}
+              accessible
+              accessibilityLabel={`Form score: ${score} out of 100`}
+            >
               <Text style={styles.statValue}>{score}%</Text>
               <Text style={styles.statLabel}>
                 {sets && sets.length > 1 ? "Avg Score" : "Form Score"}
@@ -230,7 +234,12 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
         )}
       </ScrollView>
 
-      <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
+      <TouchableOpacity
+        style={styles.doneButton}
+        onPress={handleDone}
+        accessibilityRole="button"
+        accessibilityLabel="Done, return to home"
+      >
         <Text style={styles.doneButtonText}>Done</Text>
       </TouchableOpacity>
     </SafeAreaView>

@@ -9,7 +9,7 @@ export default function LoadingState({
   message = "Loading...",
 }: LoadingStateProps) {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessible accessibilityLabel={message}>
       <ActivityIndicator size="large" color="#00E5FF" />
       <Text style={styles.message}>{message}</Text>
     </View>

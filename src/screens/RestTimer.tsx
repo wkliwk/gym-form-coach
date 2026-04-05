@@ -147,7 +147,12 @@ export default function RestTimerScreen({
         </Text>
       </View>
 
-      <View style={styles.timerContainer}>
+      <View
+        style={styles.timerContainer}
+        accessible
+        accessibilityLabel={remaining === 0 ? "Rest timer complete" : `${minutes} minutes ${seconds} seconds remaining`}
+        accessibilityLiveRegion="polite"
+      >
         <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
           {/* Background circle */}
           <Circle
@@ -210,6 +215,8 @@ export default function RestTimerScreen({
           style={styles.nextSetButton}
           onPress={handleNextSet}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={remaining === 0 ? "Start next set" : "Skip rest and start next set"}
         >
           <Text style={styles.nextSetText}>
             {remaining === 0 ? "Start Next Set" : "Skip Rest"}
@@ -220,6 +227,8 @@ export default function RestTimerScreen({
           style={styles.endButton}
           onPress={handleEndWorkout}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="End workout and view summary"
         >
           <Text style={styles.endText}>End Workout</Text>
         </TouchableOpacity>

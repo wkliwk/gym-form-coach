@@ -15,7 +15,7 @@ export default function ErrorState({
   onAction,
 }: ErrorStateProps) {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessible accessibilityRole="alert">
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
       {actionLabel && onAction && (
