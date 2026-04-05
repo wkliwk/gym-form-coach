@@ -4,6 +4,7 @@ import * as Speech from "expo-speech";
 import * as Haptics from "expo-haptics";
 import type { FormFlag } from "../lib/types";
 import { FLAG_LABELS } from "../lib/types";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 // Position below exercise header (safe area + header + rep counter + gap)
@@ -18,6 +19,7 @@ interface CueBannerProps {
 export default function CueBanner({ flag, repNumber }: CueBannerProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const lastSpokenRep = useRef(0);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (repNumber === 0) return;
@@ -47,14 +49,21 @@ export default function CueBanner({ flag, repNumber }: CueBannerProps) {
       });
     }
 
-    // Flash the visual cue
-    opacity.setValue(1);
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 2000,
-      useNativeDriver: true,
-    }).start();
-  }, [repNumber, flag, opacity]);
+    // Flash the visual cue (skip animation if reduced motion)
+    if (reducedMotion) {
+      opacity.setValue(1);
+      // Hold visible for 2s then hide instantly
+      const timer = setTimeout(() => opacity.setValue(0), 2000);
+      return () => clearTimeout(timer);
+    } else {
+      opacity.setValue(1);
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 2000,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [repNumber, flag, opacity, reducedMotion]);
 
   if (repNumber === 0) return null;
 
@@ -62,7 +71,12 @@ export default function CueBanner({ flag, repNumber }: CueBannerProps) {
   const color = flag ? "#f59e0b" : "#22c55e";
 
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
+    <Animated.View
+      style={[styles.container, { opacity }]}
+      accessible
+      accessibilityLabel={`Rep ${repNumber}: ${label}`}
+      accessibilityLiveRegion="polite"
+    >
       <View style={[styles.badge, { backgroundColor: color + "20" }]}>
         <Text style={[styles.repText, { color }]}>Rep {repNumber}</Text>
         <Text style={[styles.cueText, { color }]}>{label}</Text>

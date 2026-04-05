@@ -3,7 +3,13 @@ import { View, Text, StyleSheet, Platform } from "react-native";
 
 export default function SafetyBanner() {
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View
+      style={styles.container}
+      pointerEvents="none"
+      accessible
+      accessibilityLabel="Safety reminder: stop if you feel pain"
+      accessibilityRole="alert"
+    >
       <Text style={styles.text}>
         Movement guide — stop if you feel pain
       </Text>

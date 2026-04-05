@@ -121,6 +121,8 @@ export default function ProgramsScreen({ navigation }: ProgramsProps) {
                           dayNumber: progress!.currentDay,
                         })
                       }
+                      accessibilityRole="button"
+                      accessibilityLabel={`Continue ${program.name}, day ${progress!.currentDay}`}
                     >
                       <Text style={styles.continueText}>Continue</Text>
                     </TouchableOpacity>
@@ -136,6 +138,8 @@ export default function ProgramsScreen({ navigation }: ProgramsProps) {
                 <TouchableOpacity
                   style={styles.startButton}
                   onPress={() => handleStart(program.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start ${program.name}`}
                 >
                   <Text style={styles.startText}>Start Program</Text>
                 </TouchableOpacity>
