@@ -20,6 +20,7 @@ import {
   ActivityIndicator,
   Platform,
   SafeAreaView,
+  AppState,
 } from "react-native";
 import { CameraView } from "expo-camera";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -61,6 +62,15 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
     loadPreferences(exerciseType).then(setPrefs);
   }, [exerciseType]);
 
+  // Pause pose estimation when app goes to background
+  const [isActive, setIsActive] = useState(true);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      setIsActive(state === "active");
+    });
+    return () => sub.remove();
+  }, []);
+
   // Rep detection + form analysis
   const { processPose, getStats, reset } = useRepDetector(exerciseType);
   const [repCount, setRepCount] = useState(0);
@@ -83,7 +93,7 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
   const { poses, modelReady, fps } = usePoseEstimation({
     cameraRef,
     isCameraReady,
-    enabled: permissionState === "granted" && !showGuide,
+    enabled: permissionState === "granted" && !showGuide && isActive,
   });
 
   // Track no-landmarks hint
