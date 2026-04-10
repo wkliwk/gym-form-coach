@@ -30,6 +30,7 @@
     "expo-gl": "^55.0.10",
     "expo-haptics": "^55.0.11",
     "expo-mail-composer": "~15.0.8",
+    "expo-notifications": "~0.32.16",
     "expo-sharing": "~14.0.8",
     "expo-speech": "~14.0.8",
     "expo-splash-screen": "~31.0.13",
@@ -50,6 +51,7 @@
     "eslint": "^10.1.0",
     "jest": "^30.3.0",
     "jest-expo": "^55.0.13",
+    "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2"
   },
   "private": true
