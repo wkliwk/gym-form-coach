@@ -31,8 +31,14 @@ import PoseOverlay from "../components/PoseOverlay";
 import CueBanner from "../components/CueBanner";
 import SafetyBanner from "../components/SafetyBanner";
 import CameraGuide from "../components/CameraGuide";
+import ConfidenceBanner from "../components/ConfidenceBanner";
 import { EXERCISE_LABELS, DEFAULT_PREFERENCES } from "../lib/types";
 import type { ExercisePreferences, FormFlag } from "../lib/types";
+import {
+  computeExerciseConfidence,
+  getConfidenceLevel,
+  type ConfidenceLevel,
+} from "../lib/poseConfidence";
 import { loadPreferences } from "../lib/sessionStorage";
 import type { TrainStackParamList } from "../navigation";
 import {
@@ -77,12 +83,19 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
   const [lastCueFlag, setLastCueFlag] = useState<FormFlag | null>(null);
   const [lastCueRep, setLastCueRep] = useState(0);
 
+  // Confidence tracking
+  const [confidenceLevel, setConfidenceLevel] = useState<ConfidenceLevel>("good");
+  const sessionStartRef = useRef(0);
+  const WARMUP_MS = 2000;
+
   // Reset detector when exercise changes
   useEffect(() => {
     reset();
     setRepCount(0);
     setLastCueFlag(null);
     setLastCueRep(0);
+    setConfidenceLevel("good");
+    sessionStartRef.current = 0;
   }, [exerciseType, reset]);
 
   const handleCameraReady = useCallback(() => {
@@ -106,17 +119,35 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
   useEffect(() => {
     if (poses === prevPosesRef.current || poses.length === 0 || showGuide) return;
     prevPosesRef.current = poses;
-    lastPoseTime.current = Date.now();
+    const now = Date.now();
+    lastPoseTime.current = now;
     setShowNoLandmarksHint(false);
 
+    // Track session start for warm-up grace period
+    if (sessionStartRef.current === 0) {
+      sessionStartRef.current = now;
+    }
+
     const pose = poses[0];
+
+    // Compute confidence (skip during warm-up)
+    const pastWarmup = now - sessionStartRef.current > WARMUP_MS;
+    if (pastWarmup) {
+      const confidence = computeExerciseConfidence(pose, exerciseType);
+      const level = getConfidenceLevel(confidence);
+      setConfidenceLevel(level);
+
+      // Pause rep counting when confidence is critical
+      if (level === "critical") return;
+    }
+
     const event = processPose(pose);
     if (event) {
       setRepCount(event.repNumber);
       setLastCueFlag(event.flag);
       setLastCueRep(event.repNumber);
     }
-  }, [poses, processPose, showGuide]);
+  }, [poses, processPose, showGuide, exerciseType]);
 
   // Show hint if no poses detected for 5+ seconds after model is ready
   useEffect(() => {
@@ -272,6 +303,9 @@ export default function Session({ route, navigation }: SessionProps): React.Reac
           <Text style={styles.fpsText}>{fps} fps</Text>
         </View>
       )}
+
+      {/* Pose confidence warning */}
+      <ConfidenceBanner level={confidenceLevel} />
 
       {/* No landmarks hint */}
       {showNoLandmarksHint && modelReady && (
