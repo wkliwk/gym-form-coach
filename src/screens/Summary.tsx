@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Alert,
 } from "react-native";
+import ViewShot from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { SessionRecord } from "../lib/types";
 import {
@@ -14,8 +17,9 @@ import {
   DRILL_SUGGESTIONS,
   EXERCISE_LABELS,
 } from "../lib/types";
-import { addSession, loadSessions, findPreviousSession } from "../lib/sessionStorage";
+import { addSession, loadSessions, findPreviousSession, getPersonalBests } from "../lib/sessionStorage";
 import { detectFatigue, findBestWorstReps } from "../lib/formInsights";
+import ShareCard from "../components/ShareCard";
 import type { TrainStackParamList } from "../navigation";
 
 type SummaryProps = NativeStackScreenProps<TrainStackParamList, "Summary">;
@@ -32,11 +36,15 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
   const { exercise, reps, topFlag, score, repRecords, sets, durationMs } = route.params;
   const [delta, setDelta] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
+  const [isPersonalBest, setIsPersonalBest] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const shareRef = useRef<ViewShot>(null);
+  const sessionDate = useRef(new Date().toISOString());
 
   useEffect(() => {
     const session: SessionRecord = {
       id: Date.now().toString(),
-      date: new Date().toISOString(),
+      date: sessionDate.current,
       exercise,
       reps,
       topFlag,
@@ -52,6 +60,12 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
       if (prev) {
         setDelta(reps - prev.reps);
       }
+      // Check personal best
+      const bests = getPersonalBests(sessions);
+      const best = bests[exercise];
+      if (best && best.score === score && best.date === session.date) {
+        setIsPersonalBest(true);
+      }
     });
   }, [exercise, reps, topFlag, score, sets, durationMs]);
 
@@ -59,6 +73,27 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
   const drill = topFlag ? DRILL_SUGGESTIONS[topFlag] : null;
   const fatigue = detectFatigue(repRecords);
   const { bestRep, worstRep } = findBestWorstReps(repRecords);
+
+  const handleShare = async () => {
+    if (!shareRef.current?.capture) return;
+    setSharing(true);
+    try {
+      const uri = await shareRef.current.capture();
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) {
+        Alert.alert("Sharing not available", "Cannot share on this device.");
+        return;
+      }
+      await Sharing.shareAsync(uri, {
+        mimeType: "image/png",
+        dialogTitle: "Share your session",
+      });
+    } catch {
+      Alert.alert("Error", "Failed to capture or share image.");
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const handleDone = () => {
     navigation.popToTop();
@@ -234,14 +269,41 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
         )}
       </ScrollView>
 
-      <TouchableOpacity
-        style={styles.doneButton}
-        onPress={handleDone}
-        accessibilityRole="button"
-        accessibilityLabel="Done, return to home"
-      >
-        <Text style={styles.doneButtonText}>Done</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={handleShare}
+          disabled={sharing}
+          accessibilityRole="button"
+          accessibilityLabel="Share session summary"
+        >
+          <Text style={styles.shareButtonText}>
+            {sharing ? "Sharing..." : "Share"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.doneButton}
+          onPress={handleDone}
+          accessibilityRole="button"
+          accessibilityLabel="Done, return to home"
+        >
+          <Text style={styles.doneButtonText}>Done</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Offscreen ShareCard for capture */}
+      <View style={styles.offscreen} pointerEvents="none">
+        <ViewShot ref={shareRef} options={{ format: "png", quality: 1 }}>
+          <ShareCard
+            exercise={exercise}
+            reps={reps}
+            score={score}
+            sets={sets?.length}
+            isPersonalBest={isPersonalBest}
+            date={sessionDate.current}
+          />
+        </ViewShot>
+      </View>
     </SafeAreaView>
   );
 }
@@ -498,10 +560,29 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "right",
   },
-  doneButton: {
-    backgroundColor: "#6366f1",
-    marginHorizontal: 20,
+  buttonRow: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
     marginBottom: 40,
+    gap: 12,
+  },
+  shareButton: {
+    flex: 1,
+    backgroundColor: "#1a1a24",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2a2a3a",
+  },
+  shareButtonText: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#00E5FF",
+  },
+  doneButton: {
+    flex: 2,
+    backgroundColor: "#6366f1",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -510,5 +591,10 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     color: "#ffffff",
+  },
+  offscreen: {
+    position: "absolute",
+    left: -9999,
+    top: -9999,
   },
 });
