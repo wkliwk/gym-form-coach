@@ -9,7 +9,7 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const CHART_WIDTH = SCREEN_WIDTH - 40; // 20px padding each side
 
 const WEEK_OPTIONS = [4, 8, 12] as const;
-const EXERCISES: (Exercise | null)[] = [null, "squat", "deadlift", "pushup", "overheadPress"];
+const EXERCISES: (Exercise | null)[] = [null, "squat", "deadlift", "pushup", "overheadPress", "benchPress"];
 
 interface FormTrendsChartProps {
   sessions: SessionRecord[];
