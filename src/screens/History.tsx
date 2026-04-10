@@ -23,6 +23,7 @@ import {
   getTotalReps,
   getScoreTrend,
 } from "../lib/sessionStorage";
+import FormTrendsChart from "../components/FormTrendsChart";
 
 const MAX_DISPLAY = 50;
 
@@ -244,6 +245,7 @@ export default function HistoryScreen() {
   const ListHeader = () => (
     <>
       <StatsHeader sessions={allSessions} />
+      <FormTrendsChart sessions={allSessions} />
       <PersonalBests
         sessions={allSessions}
         exerciseFilter={exerciseFilter}
