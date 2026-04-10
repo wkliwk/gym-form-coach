@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,13 @@ import {
   ScrollView,
 } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useIsFocused } from "@react-navigation/native";
 import type { Exercise } from "../lib/types";
 import { EXERCISE_LABELS } from "../lib/types";
 import type { TrainStackParamList } from "../navigation";
 import { trackExerciseSelected } from "../lib/analytics";
+import { loadSessions, getWorkoutStreak } from "../lib/sessionStorage";
+import StreakWidget from "../components/StreakWidget";
 
 type HomeProps = {
   navigation: NativeStackNavigationProp<TrainStackParamList, "Home">;
@@ -26,6 +29,20 @@ const EXERCISES: { type: Exercise; emoji: string; description: string }[] = [
 ];
 
 export default function HomeScreen({ navigation }: HomeProps) {
+  const isFocused = useIsFocused();
+  const [streak, setStreak] = useState({ current: 0, best: 0 });
+
+  const refreshStreak = useCallback(async () => {
+    const sessions = await loadSessions();
+    setStreak(getWorkoutStreak(sessions));
+  }, []);
+
+  useEffect(() => {
+    if (isFocused) {
+      refreshStreak();
+    }
+  }, [isFocused, refreshStreak]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -47,6 +64,10 @@ export default function HomeScreen({ navigation }: HomeProps) {
           </View>
         </View>
         <Text style={styles.subtitle}>Choose an exercise to start</Text>
+      </View>
+
+      <View style={styles.streakContainer}>
+        <StreakWidget current={streak.current} best={streak.best} />
       </View>
 
       <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
@@ -124,6 +145,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#ffffff60",
     marginTop: 6,
+  },
+  streakContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
   grid: {
     paddingHorizontal: 20,

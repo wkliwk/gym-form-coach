@@ -16,6 +16,11 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import FeedbackScreen from "./Feedback";
 import { loadSessions, loadAllPreferences, savePreferences } from "../lib/sessionStorage";
+import {
+  loadReminderSettings,
+  saveReminderSettings,
+  type ReminderSettings,
+} from "../lib/notifications";
 import type { Exercise, ExercisePreferences } from "../lib/types";
 import { EXERCISE_LABELS, DEFAULT_PREFERENCES } from "../lib/types";
 import {
@@ -64,9 +69,15 @@ export default function SettingsScreen() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [allPrefs, setAllPrefs] = useState<Partial<Record<Exercise, ExercisePreferences>>>({});
   const [expandedExercise, setExpandedExercise] = useState<Exercise | null>(null);
+  const [reminder, setReminder] = useState<ReminderSettings>({
+    enabled: false,
+    hour: 18,
+    minute: 0,
+  });
 
   useEffect(() => {
     loadAllPreferences().then(setAllPrefs);
+    loadReminderSettings().then(setReminder);
   }, []);
 
   const updatePref = useCallback(
@@ -184,6 +195,58 @@ export default function SettingsScreen() {
             </View>
           );
         })}
+      </View>
+
+      {/* Daily Reminder */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Daily Reminder</Text>
+
+        <TouchableOpacity
+          style={styles.row}
+          onPress={async () => {
+            const updated = { ...reminder, enabled: !reminder.enabled };
+            setReminder(updated);
+            await saveReminderSettings(updated);
+          }}
+        >
+          <Text style={styles.label}>Reminder</Text>
+          <Text style={[styles.value, { color: reminder.enabled ? "#00E5FF" : "#ffffff50" }]}>
+            {reminder.enabled ? "On" : "Off"}
+          </Text>
+        </TouchableOpacity>
+
+        {reminder.enabled && (
+          <>
+            <Text style={[styles.sectionTitle, { marginTop: 12, marginBottom: 8 }]}>
+              Reminder Time
+            </Text>
+            <View style={styles.optionRow}>
+              {[6, 7, 8, 9, 12, 17, 18, 19, 20, 21].map((h) => (
+                <TouchableOpacity
+                  key={h}
+                  style={[
+                    styles.optionPill,
+                    reminder.hour === h && styles.optionPillActive,
+                  ]}
+                  onPress={async () => {
+                    const updated = { ...reminder, hour: h, minute: 0 };
+                    setReminder(updated);
+                    await saveReminderSettings(updated);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      reminder.hour === h && styles.optionTextActive,
+                    ]}
+                  >
+                    {h <= 12 ? `${h}am` : `${h - 12}pm`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
       </View>
 
       <View style={styles.section}>

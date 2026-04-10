@@ -7,9 +7,11 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initPoseDetector } from "./src/lib/poseEstimation";
+import { configureNotifications } from "./src/lib/notifications";
 
 // Keep splash screen visible while we load the model
 SplashScreen.preventAutoHideAsync();
+configureNotifications();
 import type { TrainStackParamList, TabParamList } from "./src/navigation";
 import HomeScreen from "./src/screens/Home";
 import Session from "./src/screens/Session";
