@@ -12,7 +12,7 @@
 
 ### 1. Real-Time Form Analysis
 **Description:** Live camera view with skeleton overlay. On-device pose estimation (react-native-vision-camera + TensorFlow.js MoveNet) analyses joint angles and flags form issues each rep.
-**Supported exercises:** Squat, Deadlift, Push-up, Overhead Press.
+**Supported exercises:** Squat, Deadlift, Push-up, Overhead Press, Bench Press.
 **User flow:**
 1. User opens app -> completes onboarding (first launch only) -> selects exercise
 2. Camera placement guide shown (where to position phone)
@@ -38,12 +38,14 @@
 **Deadlift flags:** rounded lower back, hips rising early, bar drift
 **Push-up flags:** hips sagging, elbows flaring, incomplete range
 **Overhead Press flags:** bar path drift, excessive back arch, incomplete lockout
+**Bench Press flags:** wrist rollover, elbow flare, incomplete lockout
 
 **Acceptance criteria:**
 - [x] Squat reps counted accurately (hip below knee = bottom)
 - [x] Deadlift reps counted (hip hinge from floor to lockout)
 - [x] Push-up reps counted (chest to floor, full extension)
 - [x] Overhead press reps counted (bar from shoulders to lockout)
+- [x] Bench press reps counted (descent to chest + lockout = 1 rep)
 - [x] Audio cue delivered within 500ms of rep completion
 - [x] Max 1 cue per rep (most critical flag only)
 - [x] "Good rep" audio on clean reps
@@ -133,4 +135,4 @@
 iPhone 12 (A14 Bionic) or newer. Android equivalent TBD. Pose estimation at required fps degrades badly on older hardware.
 
 ## Test Coverage
-53 tests via Jest + React Native Testing Library. CI runs `tsc --noEmit` + `jest` on every push.
+131 tests via Jest + React Native Testing Library. CI runs `tsc --noEmit` + `jest` on every push.
