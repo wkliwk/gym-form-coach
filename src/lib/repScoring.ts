@@ -21,6 +21,8 @@ const FLAG_SEVERITY: Record<FormFlag, number> = {
   excessive_back_arch: 0.85,
   uneven_press: 0.6,
   incomplete_lockout: 0.55,
+  // Bench press flags
+  wrist_rollover: 0.8,
 };
 
 /**

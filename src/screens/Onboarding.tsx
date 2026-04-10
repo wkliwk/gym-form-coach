@@ -53,6 +53,7 @@ const EXERCISES: { type: Exercise; emoji: string }[] = [
   { type: "deadlift", emoji: "💪" },
   { type: "pushup", emoji: "🫸" },
   { type: "overheadPress", emoji: "🙌" },
+  { type: "benchPress", emoji: "🔩" },
 ];
 
 type OnboardingPhase = "slides" | "camera" | "exercise" | "ready";

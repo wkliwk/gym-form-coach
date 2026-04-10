@@ -26,6 +26,7 @@ const EXERCISES: { type: Exercise; emoji: string; description: string }[] = [
   { type: "deadlift", emoji: "💪", description: "Track back angle & bar path" },
   { type: "pushup", emoji: "🫸", description: "Track range, hips & elbows" },
   { type: "overheadPress", emoji: "🙌", description: "Track lockout, arch & symmetry" },
+  { type: "benchPress", emoji: "🔩", description: "Track wrists, elbows & lockout" },
 ];
 
 export default function HomeScreen({ navigation }: HomeProps) {

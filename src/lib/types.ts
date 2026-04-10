@@ -1,4 +1,4 @@
-export type Exercise = "squat" | "deadlift" | "pushup" | "overheadPress";
+export type Exercise = "squat" | "deadlift" | "pushup" | "overheadPress" | "benchPress";
 
 export type FormFlag =
   | "knees_caving"
@@ -12,7 +12,8 @@ export type FormFlag =
   | "incomplete_range"
   | "excessive_back_arch"
   | "uneven_press"
-  | "incomplete_lockout";
+  | "incomplete_lockout"
+  | "wrist_rollover";
 
 export interface RepRecord {
   repNumber: number;
@@ -93,6 +94,7 @@ export const FLAG_LABELS: Record<FormFlag, string> = {
   excessive_back_arch: "Excessive back arch",
   uneven_press: "Uneven press",
   incomplete_lockout: "Incomplete lockout",
+  wrist_rollover: "Wrist rollover",
 };
 
 export const DRILL_SUGGESTIONS: Record<FormFlag, string> = {
@@ -108,6 +110,7 @@ export const DRILL_SUGGESTIONS: Record<FormFlag, string> = {
   excessive_back_arch: "Brace your core harder — practice with wall-supported presses",
   uneven_press: "Focus on pressing evenly — try single-arm dumbbell presses to find imbalances",
   incomplete_lockout: "Press until elbows are fully locked — use lighter weight to build the pattern",
+  wrist_rollover: "Keep wrists neutral — try wraps or reduce weight to build wrist stability",
 };
 
 export const EXERCISE_LABELS: Record<Exercise, string> = {
@@ -115,4 +118,5 @@ export const EXERCISE_LABELS: Record<Exercise, string> = {
   deadlift: "Deadlift",
   pushup: "Push-up",
   overheadPress: "Overhead Press",
+  benchPress: "Bench Press",
 };
