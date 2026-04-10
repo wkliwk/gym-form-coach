@@ -40,6 +40,14 @@ const EXERCISE_LANDMARKS: Record<Exercise, string[]> = {
     "left_wrist",
     "right_wrist",
   ],
+  benchPress: [
+    "left_shoulder",
+    "right_shoulder",
+    "left_elbow",
+    "right_elbow",
+    "left_wrist",
+    "right_wrist",
+  ],
 };
 
 export const CONFIDENCE_GOOD = 0.7;
