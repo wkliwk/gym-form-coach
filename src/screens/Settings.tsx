@@ -58,7 +58,7 @@ function buildFeedbackTemplate(): string {
 const REST_OPTIONS = [60, 90, 120, 180] as const;
 const SET_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
 const REP_OPTIONS = [3, 5, 6, 8, 10, 12, 15, 20];
-const EXERCISES: Exercise[] = ["squat", "deadlift", "pushup", "overheadPress"];
+const EXERCISES: Exercise[] = ["squat", "deadlift", "pushup", "overheadPress", "benchPress"];
 
 export default function SettingsScreen() {
   const [showFeedback, setShowFeedback] = useState(false);

@@ -167,4 +167,42 @@ export const EXERCISE_TIPS: Record<Exercise, ExerciseTipData> = {
       },
     ],
   },
+  benchPress: {
+    idealForm:
+      "Lie flat on the bench with feet flat on the floor. Grip the bar slightly wider than shoulder-width. Retract and depress your shoulder blades, create a slight natural arch in your lower back. Lower the bar in a slight arc to your mid-chest, then press back up to full lockout. Elbows should travel at 45-60 degrees from your torso — not flared wide, not tucked tight.",
+    cameraSetup:
+      "Place your phone at bench height approximately 6 feet to your side, propped against something stable. It should capture your upper body — shoulders, elbows, and wrists — in a side-view profile.",
+    mistakes: [
+      {
+        flag: "wrist_rollover",
+        label: "Wrist rollover",
+        whatItLooksLike:
+          "Your wrists bend backward under the bar rather than staying stacked directly above your forearms.",
+        whyItMatters:
+          "Bent wrists under load place significant stress on the wrist joint and can cause pain or injury. It also reduces force transfer from the triceps to the bar.",
+        howToFix:
+          "Keep your wrists neutral and stacked above your forearms throughout the lift. Wrist wraps can help cue this. If you cannot maintain it, reduce the weight.",
+      },
+      {
+        flag: "elbows_flaring",
+        label: "Elbow flare",
+        whatItLooksLike:
+          "Your upper arms splay out at 90 degrees from your torso rather than staying at 45-60 degrees.",
+        whyItMatters:
+          "Extreme flare places the shoulder joint in a vulnerable position and reduces pec recruitment. It is the most common cause of shoulder impingement in bench pressing.",
+        howToFix:
+          "Think about 'bending the bar' or 'tucking' your elbows slightly toward your hips. Practice with a close-grip bench press to build the motor pattern. Film yourself from above to see your elbow angle clearly.",
+      },
+      {
+        flag: "incomplete_lockout",
+        label: "Incomplete lockout",
+        whatItLooksLike:
+          "Your elbows remain slightly bent at the top of the rep instead of reaching full extension.",
+        whyItMatters:
+          "Prevents full triceps activation and keeps the muscles under continuous load without a reset. Limits strength gains at the top of the press.",
+        howToFix:
+          "Press through until your elbows are fully locked. If you cannot lock out, the weight is too heavy. Practice pause bench press (2 seconds at top) to build awareness of full lockout.",
+      },
+    ],
+  },
 };
