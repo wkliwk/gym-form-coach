@@ -22,6 +22,7 @@ import WeeklyReportScreen from "./src/screens/WeeklyReport";
 import ProgramsScreen from "./src/screens/Programs";
 import ProgramDayScreen from "./src/screens/ProgramDay";
 import HistoryScreen from "./src/screens/History";
+import BadgesScreen from "./src/screens/Badges";
 import OnboardingScreen, { ONBOARDING_KEY } from "./src/screens/Onboarding";
 import SettingsScreen from "./src/screens/Settings";
 
@@ -71,6 +72,10 @@ function HistoryIcon({ color }: { color: string }) {
   return <Text style={{ fontSize: 20, color }}>📊</Text>;
 }
 
+function BadgesIcon({ color }: { color: string }) {
+  return <Text style={{ fontSize: 20, color }}>🏅</Text>;
+}
+
 function SettingsIcon({ color }: { color: string }) {
   return <Text style={{ fontSize: 20, color }}>⚙️</Text>;
 }
@@ -102,6 +107,11 @@ function MainApp() {
           name="History"
           component={HistoryScreen}
           options={{ tabBarIcon: HistoryIcon }}
+        />
+        <Tab.Screen
+          name="Badges"
+          component={BadgesScreen}
+          options={{ tabBarIcon: BadgesIcon }}
         />
         <Tab.Screen
           name="Settings"

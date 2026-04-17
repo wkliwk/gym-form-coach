@@ -14,6 +14,7 @@ import { Camera } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Exercise } from "../lib/types";
 import { EXERCISE_LABELS } from "../lib/types";
+import OnboardingCameraSetup, { CAMERA_SETUP_KEY } from "./OnboardingCameraSetup";
 
 export const ONBOARDING_KEY = "hasCompletedOnboarding";
 
@@ -56,7 +57,7 @@ const EXERCISES: { type: Exercise; emoji: string }[] = [
   { type: "benchPress", emoji: "🔩" },
 ];
 
-type OnboardingPhase = "slides" | "camera" | "exercise" | "ready";
+type OnboardingPhase = "slides" | "camera" | "camera-setup" | "exercise" | "ready";
 
 type Props = {
   onComplete: (firstExercise?: Exercise) => void;
@@ -98,7 +99,13 @@ export default function OnboardingScreen({ onComplete }: Props) {
 
   const handleCameraPermission = useCallback(async () => {
     await Camera.requestCameraPermissionsAsync();
-    setPhase("exercise");
+    // Skip camera-setup if already completed/skipped in a prior launch
+    const setupDone = await AsyncStorage.getItem(CAMERA_SETUP_KEY);
+    if (setupDone) {
+      setPhase("exercise");
+    } else {
+      setPhase("camera-setup");
+    }
   }, []);
 
   const handleSkipCamera = useCallback(() => {
@@ -146,6 +153,16 @@ export default function OnboardingScreen({ onComplete }: Props) {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+    );
+  }
+
+  // Camera setup phase
+  if (phase === "camera-setup") {
+    return (
+      <OnboardingCameraSetup
+        onComplete={() => setPhase("exercise")}
+        onSkip={() => setPhase("exercise")}
+      />
     );
   }
 
