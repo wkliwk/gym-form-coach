@@ -10,12 +10,15 @@ import {
 } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useIsFocused } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Exercise } from "../lib/types";
 import { EXERCISE_LABELS } from "../lib/types";
 import type { TrainStackParamList } from "../navigation";
 import { trackExerciseSelected } from "../lib/analytics";
 import { loadSessions, getWorkoutStreak } from "../lib/sessionStorage";
 import StreakWidget from "../components/StreakWidget";
+
+const HOME_EXERCISE_TIP_KEY = "homeFirstExerciseTipSeen";
 
 type HomeProps = {
   navigation: NativeStackNavigationProp<TrainStackParamList, "Home">;
@@ -32,6 +35,7 @@ const EXERCISES: { type: Exercise; emoji: string; description: string }[] = [
 export default function HomeScreen({ navigation }: HomeProps) {
   const isFocused = useIsFocused();
   const [streak, setStreak] = useState({ current: 0, best: 0 });
+  const [showExerciseTip, setShowExerciseTip] = useState(false);
 
   const refreshStreak = useCallback(async () => {
     const sessions = await loadSessions();
@@ -43,6 +47,13 @@ export default function HomeScreen({ navigation }: HomeProps) {
       refreshStreak();
     }
   }, [isFocused, refreshStreak]);
+
+  // Show one-time "camera guide will appear first" tip after onboarding
+  useEffect(() => {
+    AsyncStorage.getItem(HOME_EXERCISE_TIP_KEY).then((seen) => {
+      if (!seen) setShowExerciseTip(true);
+    });
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -72,12 +83,23 @@ export default function HomeScreen({ navigation }: HomeProps) {
       </View>
 
       <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
+        {showExerciseTip && (
+          <View style={styles.exerciseTip} accessible accessibilityLiveRegion="polite">
+            <Text style={styles.exerciseTipText}>
+              📷 Tap to start — your camera guide will appear first
+            </Text>
+          </View>
+        )}
         {EXERCISES.map(({ type, emoji, description }) => (
           <TouchableOpacity
             key={type}
             style={styles.card}
             activeOpacity={0.7}
-            onPress={() => {
+            onPress={async () => {
+              if (showExerciseTip) {
+                setShowExerciseTip(false);
+                await AsyncStorage.setItem(HOME_EXERCISE_TIP_KEY, "true");
+              }
               trackExerciseSelected(type);
               navigation.navigate("Session", { exerciseType: type });
             }}
@@ -195,5 +217,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#ffffff70",
     lineHeight: 20,
+  },
+  exerciseTip: {
+    backgroundColor: "#00E5FF15",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#00E5FF30",
+  },
+  exerciseTipText: {
+    fontSize: 13,
+    color: "#00E5FFcc",
+    fontWeight: "500",
+    textAlign: "center",
   },
 });
