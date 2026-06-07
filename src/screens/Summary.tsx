@@ -18,8 +18,11 @@ import {
   EXERCISE_LABELS,
 } from "../lib/types";
 import { addSession, loadSessions, findPreviousSession, getPersonalBests } from "../lib/sessionStorage";
+import { checkAndAwardBadges } from "../lib/badges";
+import type { BadgeDefinition } from "../lib/badges";
 import { detectFatigue, findBestWorstReps } from "../lib/formInsights";
 import ShareCard from "../components/ShareCard";
+import BadgeUnlockModal from "../components/BadgeUnlockModal";
 import type { TrainStackParamList } from "../navigation";
 
 type SummaryProps = NativeStackScreenProps<TrainStackParamList, "Summary">;
@@ -38,6 +41,7 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
   const [saved, setSaved] = useState(false);
   const [isPersonalBest, setIsPersonalBest] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [newBadges, setNewBadges] = useState<BadgeDefinition[]>([]);
   const shareRef = useRef<ViewShot>(null);
   const sessionDate = useRef(new Date().toISOString());
 
@@ -65,6 +69,11 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
       const best = bests[exercise];
       if (best && best.score === score && best.date === session.date) {
         setIsPersonalBest(true);
+      }
+      // Check for newly unlocked badges
+      const earned = await checkAndAwardBadges(sessions, session);
+      if (earned.length > 0) {
+        setNewBadges(earned);
       }
     });
   }, [exercise, reps, topFlag, score, sets, durationMs]);
@@ -100,6 +109,11 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
   };
 
   return (
+    <>
+    <BadgeUnlockModal
+      badges={newBadges}
+      onDismiss={() => setNewBadges([])}
+    />
     <SafeAreaView style={styles.container} accessibilityLabel="Session summary">
       <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContainer}>
         <Text style={styles.title} accessibilityRole="header">
@@ -305,6 +319,7 @@ export default function SummaryScreen({ route, navigation }: SummaryProps) {
         </ViewShot>
       </View>
     </SafeAreaView>
+    </>
   );
 }
 

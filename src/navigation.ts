@@ -31,5 +31,6 @@ export type TrainStackParamList = {
 export type TabParamList = {
   Train: undefined;
   History: undefined;
+  Badges: undefined;
   Settings: undefined;
 };
