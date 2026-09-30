@@ -1,60 +1,27 @@
 # Gym Form Coach
 
-Real-time AI gym form coaching for iOS. Point your phone at yourself, perform a rep, get instant corrective audio feedback — no trainer needed.
+Real-time AI gym form coaching for iOS/Android — point your phone at yourself, perform a rep, get instant corrective audio feedback. No trainer needed.
+
+## What it does
+
+On-device pose estimation (react-native-vision-camera + TensorFlow.js MoveNet) analyzes joint angles per rep and delivers one spoken cue plus haptic feedback — hands-free, no need to check the screen mid-set.
+
+Supports Squat, Deadlift, Push-up, Overhead Press, Bench Press, with exercise-specific form flags (e.g. knees caving on squats, rounded lower back on deadlifts, bar drift on overhead press).
+
+Built for self-coached gym-goers who train regularly without a personal trainer — existing fitness apps track volume, not movement quality.
 
 ## Setup
 
 ```bash
 npm install
-npx expo start
+npx expo start          # or: npx expo start --ios
+eas build --platform ios --profile preview   # physical device build
 ```
 
-To open directly on iOS Simulator:
+## Stack
 
-```bash
-npx expo start --ios
-```
+Expo / React Native, react-native-vision-camera, TensorFlow.js (MoveNet), expo-speech.
 
-To build for a physical device (requires EAS CLI):
+## Status
 
-```bash
-eas build --platform ios --profile preview
-```
-
-## TypeScript Check
-
-```bash
-npx tsc --noEmit
-```
-
-This must pass with zero errors before committing.
-
-## Device Floor
-
-**iPhone 12 (A14 Bionic) or newer is required.** On-device pose estimation (TensorFlow.js MoveNet) requires the performance headroom of A14 Bionic or better. Older devices produce frame rates that make real-time form analysis unreliable.
-
-## Project Structure
-
-```
-src/
-  screens/        — full-screen route components (Home, Session, Summary, History)
-  components/     — shared UI components (PoseOverlay, CueBanner, SafetyBanner, CameraGuide)
-  lib/            — business logic (pose estimation, form analysis, session storage)
-  hooks/          — custom React hooks (useCamera, usePoseEstimation, useRepDetector)
-```
-
-## Supported Exercises (MVP)
-
-- Squat
-- Deadlift
-- Push-up
-
-## Tech Stack
-
-- Expo SDK 54 + React Native
-- TypeScript (strict mode)
-- react-native-vision-camera
-- TensorFlow.js + MoveNet (on-device pose estimation)
-- expo-speech (audio cues via AVSpeechSynthesizer)
-- AsyncStorage (local session history, no cloud sync)
-- EAS Build (iOS)
+Active — see `PRODUCT.md` for full feature specs and acceptance criteria.
